@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>Wedding PONG</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;600&display=swap');
+
+    :root {
+      --gold: #C9A84C; --gold-light: #F0D080;
+      --cream: #FAF6EE; --blush: #E8C8C0;
+      --dark: #1A1512;  --muted: #8A7E72;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body {
+      background:var(--dark); font-family:'Montserrat',sans-serif;
+      color:var(--cream); min-height:100%; overflow-x:hidden; touch-action:manipulation;
+    }
+
+    /* ── Particles ── */
+    #particles { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+    .petal { position:absolute; border-radius:50% 0; opacity:0; animation:fall linear infinite; }
+    @keyframes fall {
+      0%   { transform:translateY(-20px) rotate(0deg); opacity:0.7; }
+      100% { transform:translateY(110vh) rotate(720deg); opacity:0; }
+    }
+
+    /* ── Header ── */
+    #header { position:relative; z-index:10; text-align:center; padding:16px 20px 4px; }
+    #header h1 { font-family:'Playfair Display',serif; font-size:clamp(20px,5vw,34px); color:var(--gold); letter-spacing:.05em; }
+    #header .subtitle { font-size:10px; color:var(--muted); letter-spacing:.2em; text-transform:uppercase; margin-top:3px; }
+
+    /* ── Screens ── */
+    .screen { display:none; position:relative; z-index:10; flex-direction:column; align-items:center; padding:12px 14px; }
+    .screen.active { display:flex; }
+    #welcome-screen { gap:12px; }
+
+    /* ── Cards ── */
+    .card {
+      background:rgba(255,255,255,.05); border:1px solid rgba(201,168,76,.25);
+      border-radius:16px; padding:20px 22px; width:100%; max-width:440px; backdrop-filter:blur(8px);
+    }
+    .card h2 { font-family:'Playfair Display',serif; color:var(--gold); font-size:17px; margin-bottom:12px; text-align:center; }
+
+    .field-label { font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-bottom:5px; }
+
+    input[type="text"] {
+      width:100%; background:rgba(255,255,255,.07); border:1px solid rgba(201,168,76,.3);
+      border-radius:8px; color:var(--cream); font-family:'Montserrat',sans-serif;
+      font-size:16px; padding:10px 14px; outline:none; transition:border-color .2s; margin-bottom:12px;
+    }
+    input[type="text"]:focus { border-color:var(--gold); }
+    input[type="text"]::placeholder { color:var(--muted); }
+
+    /* ── Difficulty ── */
+    .diff-row { display:flex; gap:6px; margin-bottom:14px; }
+    .diff-btn {
+      flex:1; padding:9px 4px; border-radius:8px;
+      border:2px solid rgba(255,255,255,.1); background:transparent;
+      font-family:'Montserrat',sans-serif; font-size:11px; font-weight:600;
+      cursor:pointer; text-align:center; transition:all .2s;
+      letter-spacing:.04em;
+    }
+    .diff-btn.d-easy   { color:#7EC8A0; }
+    .diff-btn.d-medium { color:var(--gold); }
+    .diff-btn.d-hard   { color:#E87070; }
+    .diff-btn.d-insane { color:#C070E8; }
+    .diff-btn.sel-easy   { border-color:#7EC8A0; background:rgba(126,200,160,.12); }
+    .diff-btn.sel-medium { border-color:var(--gold); background:rgba(201,168,76,.12); }
+    .diff-btn.sel-hard   { border-color:#E87070; background:rgba(232,112,112,.12); }
+    .diff-btn.sel-insane { border-color:#C070E8; background:rgba(192,112,232,.12); }
+
+    /* ── Side pick ── */
+    .side-pick { display:flex; gap:8px; margin-bottom:12px; }
+    .side-btn {
+      flex:1; padding:11px 6px; border-radius:8px;
+      border:2px solid rgba(201,168,76,.3); background:transparent; color:var(--cream);
+      font-family:'Montserrat',sans-serif; font-size:12px; cursor:pointer;
+      transition:all .2s; text-align:center; line-height:1.4;
+    }
+    .side-btn.selected-left  { border-color:var(--gold);  background:rgba(201,168,76,.15);  color:var(--gold); }
+    .side-btn.selected-right { border-color:var(--blush); background:rgba(232,200,192,.15); color:var(--blush); }
+
+    /* ── Buttons ── */
+    .btn-gold {
+      width:100%; padding:13px; border-radius:8px; border:none;
+      background:linear-gradient(135deg,var(--gold),var(--gold-light));
+      color:var(--dark); font-family:'Playfair Display',serif; font-size:15px;
+      font-weight:700; cursor:pointer; letter-spacing:.05em; transition:opacity .2s,transform .1s;
+    }
+    .btn-gold:active  { transform:scale(.97); }
+    .btn-gold:disabled { opacity:.35; cursor:not-allowed; }
+    .btn-ghost {
+      padding:9px 18px; border:1px solid rgba(201,168,76,.4); border-radius:8px;
+      background:transparent; color:var(--gold); font-family:'Montserrat',sans-serif;
+      font-size:12px; cursor:pointer; transition:all .2s;
+    }
+    .btn-ghost:active { background:rgba(201,168,76,.1); }
+
+    /* ── Game Screen ── */
+    #game-screen { padding:6px 10px; gap:5px; }
+
+    .scoreboard {
+      display:flex; justify-content:space-between; align-items:center;
+      width:100%; max-width:560px;
+    }
+    .score-side { display:flex; flex-direction:column; align-items:center; min-width:90px; }
+    .score-name { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:1px; }
+    .score-name.left-name  { color:var(--gold); }
+    .score-name.right-name { color:var(--blush); }
+    .score-num { font-family:'Playfair Display',serif; font-size:36px; line-height:1; }
+    .score-num.left-num  { color:var(--gold); }
+    .score-num.right-num { color:var(--blush); }
+    .vs-badge { font-family:'Playfair Display',serif; color:var(--muted); font-size:11px; text-align:center; line-height:1.5; }
+
+    /* ── Timer ── */
+    #timer-display {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px; font-weight: 700;
+      letter-spacing: .04em; line-height: 1;
+    }
+    #timer-display.urgent { color: #E87070; animation: pulse .6s ease-in-out infinite alternate; }
+    @keyframes pulse { from { opacity:1; } to { opacity:.4; } }
+
+    /* ── Difficulty badge in game ── */
+    .diff-badge {
+      font-size:9px; letter-spacing:.12em; text-transform:uppercase;
+      padding:2px 8px; border-radius:20px; font-weight:600;
+      border:1px solid; display:inline-block; margin-top:2px;
+    }
+    .diff-badge.easy   { color:#7EC8A0; border-color:#7EC8A080; }
+    .diff-badge.medium { color:var(--gold); border-color:rgba(201,168,76,.5); }
+    .diff-badge.hard   { color:#E87070; border-color:#E8707080; }
+    .diff-badge.insane { color:#C070E8; border-color:#C070E880; }
+
+    /* ── Arena : canvas plein largeur ── */
+    .canvas-wrap {
+      border: 1px solid rgba(201,168,76,.2); border-radius: 10px; overflow: hidden;
+      box-shadow: 0 0 40px rgba(201,168,76,.07); width: 100%; max-width: 600px;
+      position: relative;
+      user-select: none; -webkit-user-select: none;
+      cursor: ns-resize;
+    }
+    #pong { display: block; width: 100%; height: auto; touch-action: none; }
+
+    /* ── Zones de swipe invisibles sur chaque moitié du canvas ── */
+    .swipe-zone {
+      position: absolute; top: 0; bottom: 0; width: 50%;
+      /* Aucun style visible — totalement transparent */
+    }
+    #swipe-left  { left: 0; }
+    #swipe-right { right: 0; }
+
+    .game-status-bar { font-size: 10px; color: var(--muted); text-align: center; letter-spacing: .08em; min-height: 14px; }
+
+    /* ── Boutons ▲▼ sous le canvas (mobile) ── */
+    .touch-controls {
+      display: none; width: 100%; max-width: 600px; gap: 8px;
+    }
+    .touch-col { flex: 1; display: flex; flex-direction: column; gap: 5px; align-items: center; }
+    .touch-col-label { font-size: 9px; letter-spacing: .12em; text-transform: uppercase; }
+    .touch-col.left-col  .touch-col-label { color: var(--gold); }
+    .touch-col.right-col .touch-col-label { color: var(--blush); }
+
+    .touch-btn {
+      width: 100%; height: 48px; border-radius: 8px; border: none; cursor: pointer;
+      font-size: 18px; display: flex; align-items: center; justify-content: center;
+      user-select: none; -webkit-user-select: none; transition: transform .08s, opacity .08s;
+    }
+    .touch-btn:active { transform: scale(.93); opacity: .7; }
+    .left-col  .touch-btn { background: rgba(201,168,76,.14); border: 1px solid rgba(201,168,76,.28); }
+    .right-col .touch-btn { background: rgba(232,200,192,.14); border: 1px solid rgba(232,200,192,.28); }
+    .touch-btn.bot-disabled { opacity: .15; pointer-events: none; }
+
+    .touch-center { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; }
+    .touch-pause {
+      padding: 8px 14px; border-radius: 8px;
+      border: 1px solid rgba(201,168,76,.2); background: rgba(255,255,255,.04);
+      color: var(--muted); font-family: 'Montserrat',sans-serif; font-size: 11px; cursor: pointer;
+    }
+    .bot-indicator {
+      font-size: 9px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase;
+      padding: 3px 8px; border: 1px solid rgba(255,255,255,.07);
+      border-radius: 6px; background: rgba(255,255,255,.03); text-align: center;
+    }
+
+    @media (hover:none) and (pointer:coarse) {
+      .touch-controls { display: flex; }
+      .desktop-hint   { display: none; }
+    }
+
+    /* ── Leaderboard ── */
+    #leaderboard-screen { gap:12px; }
+    .lb-header { text-align:center; }
+    .lb-header h2 { font-family:'Playfair Display',serif; color:var(--gold); font-size:22px; }
+    .lb-header p  { font-size:10px; color:var(--muted); margin-top:3px; }
+    .lb-table { width:100%; max-width:500px; border-collapse:collapse; }
+    .lb-table thead tr { border-bottom:1px solid rgba(201,168,76,.2); }
+    .lb-table th { font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); padding:6px 8px; text-align:left; }
+    .lb-table td { padding:8px; font-size:12px; border-bottom:1px solid rgba(255,255,255,.04); }
+    .rank-cell { color:var(--muted); font-size:11px; width:28px; }
+    .rank-1 { color:var(--gold); font-weight:700; }
+    .rank-2 { color:#B8B8B8; }
+    .rank-3 { color:#CD7F32; }
+    .winner-cell { color:var(--cream); font-weight:600; }
+    .score-cell  { color:var(--gold); font-family:'Playfair Display',serif; }
+    .date-cell   { color:var(--muted); font-size:10px; }
+    .mode-tag { font-size:9px; padding:1px 5px; border-radius:4px; border:1px solid; margin-left:4px; vertical-align:middle; }
+    .mode-tag.solo { color:#7EC8A0; border-color:#7EC8A060; }
+    .mode-tag.duo  { color:var(--blush); border-color:rgba(232,200,192,.4); }
+    .side-dot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+    .dot-left  { background:var(--gold); }
+    .dot-right { background:var(--blush); }
+    .no-scores { text-align:center; color:var(--muted); font-size:12px; padding:24px; font-style:italic; }
+    .lb-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+
+    .divider { width:100%; max-width:440px; height:1px; background:linear-gradient(to right,transparent,rgba(201,168,76,.2),transparent); }
+
+    /* ── Overlay ── */
+    #overlay {
+      display:none; position:fixed; inset:0;
+      background: var(--dark);   /* fond opaque — plus de flou */
+      z-index:100; align-items:flex-start; justify-content:center;
+      overflow-y:auto; padding:16px 12px;
+    }
+    #overlay.show { display:flex; }
+    #overlay .card { max-width:480px; width:100%; }
+    #overlay .card h2 { font-size:20px; }
+    #overlay .big-score { font-family:'Playfair Display',serif; font-size:42px; color:var(--gold); }
+    #overlay .result-text { color:var(--muted); font-size:12px; line-height:1.6; }
+    #overlay .overlay-btns { display:flex; gap:7px; flex-direction:column; }
+
+    /* ── Toast ── */
+    #toast {
+      position:fixed; bottom:22px; left:50%;
+      transform:translateX(-50%) translateY(80px);
+      background:rgba(201,168,76,.92); color:var(--dark);
+      font-weight:600; font-size:12px; padding:9px 20px;
+      border-radius:40px; z-index:200; transition:transform .3s; white-space:nowrap;
+    }
+    #toast.show { transform:translateX(-50%) translateY(0); }
+
+    .desktop-hint { font-size:10px; color:var(--muted); letter-spacing:.07em; text-align:center; }
+    .key { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:3px; padding:1px 5px; font-size:9px; font-weight:600; color:var(--cream); }
+  </style>
+</head>
+<body>
+<div id="particles"></div>
+
+<div id="header">
+  <h1>🏓 Wedding PONG</h1>
+  <div class="subtitle">Le tournoi des mariés · Weekend du mariage</div>
+  <a href="https://view.genially.com/69d274a292fa9c9f3b88906f" target="_blank" style="
+    display:inline-block; margin-top:8px;
+    padding:6px 16px; border-radius:20px;
+    border:1px solid rgba(201,168,76,.4);
+    background:rgba(201,168,76,.08);
+    color:var(--gold); font-family:'Montserrat',sans-serif;
+    font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+    text-decoration:none; transition:all .2s;
+  " onmouseover="this.style.background='rgba(201,168,76,.18)'"
+     onmouseout="this.style.background='rgba(201,168,76,.08)'">
+    💒 Infos du mariage
+  </a>
+</div>
+
+<!-- ══════════ WELCOME ══════════ -->
+<div id="welcome-screen" class="screen active">
+  <div class="card">
+    <h2>Entrez dans l'arène ✨</h2>
+
+    <div class="field-label">Votre prénom</div>
+    <input type="text" id="player-name" placeholder="Marie, Jean, Mamie Gisèle…" maxlength="20" autocomplete="off" />
+
+    <div class="field-label">Difficulté du Bot</div>
+    <div class="diff-row" style="margin-bottom:14px">
+      <button class="diff-btn d-easy"   onclick="selectDiff('easy')">🌸 Facile</button>
+      <button class="diff-btn d-medium" onclick="selectDiff('medium')">⚡ Normal</button>
+      <button class="diff-btn d-hard"   onclick="selectDiff('hard')">🔥 Difficile</button>
+      <button class="diff-btn d-insane" onclick="selectDiff('insane')">💀 Insane</button>
+    </div>
+
+    <div class="field-label">Votre raquette</div>
+    <div class="side-pick">
+      <button class="side-btn selected-left" id="btn-left" style="cursor:default;max-width:180px">
+        🥂 Gauche &nbsp;·&nbsp; <small style="color:var(--muted);font-size:10px">Bot à droite</small>
+      </button>
+    </div>
+
+    <button class="btn-gold" id="start-btn" onclick="startGame()" disabled>Jouer ! 🏓</button>
+
+    <div style="margin-top:10px;font-size:10px;color:var(--muted);text-align:center;letter-spacing:.06em;line-height:1.7">
+      📱 Mobile · Glissez le doigt sur le terrain<br>
+      🖱️ PC · Clic gauche maintenu + glisser · <span style="opacity:.7">Z/S pour la raquette</span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="card">
+    <h2>🏆 Palmarès du weekend</h2>
+    <div id="lb-preview"></div>
+    <br>
+    <button class="btn-ghost" onclick="showLeaderboard()">Voir le classement complet →</button>
+  </div>
+</div>
+
+<!-- ══════════ GAME ══════════ -->
+<div id="game-screen" class="screen">
+  <div class="scoreboard">
+    <div class="score-side">
+      <div class="score-name left-name" id="left-label">Gauche</div>
+      <div class="score-num left-num"   id="score-left">0</div>
+    </div>
+    <div class="vs-badge">
+      <div id="timer-display">3:00</div>
+      <span class="diff-badge" id="diff-badge" style="display:none"></span>
+      <div id="speed-display" style="font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:.05em">
+        <span id="speed-val">–</span> km/h
+      </div>
+    </div>
+    <div class="score-side">
+      <div class="score-name right-name" id="right-label">Droite</div>
+      <div class="score-num right-num"   id="score-right">0</div>
+    </div>
+  </div>
+
+  <!-- Canvas plein largeur, zones de swipe invisibles par-dessus -->
+  <div class="canvas-wrap">
+    <canvas id="pong"></canvas>
+    <div id="swipe-left"  class="swipe-zone"></div>
+    <div id="swipe-right" class="swipe-zone"></div>
+  </div>
+
+  <div class="game-status-bar" id="game-status">Glissez le doigt sur votre côté pour jouer</div>
+
+  <!-- Boutons ▲▼ + pause (mobile) -->
+  <div class="touch-controls" id="touch-controls">
+    <div class="touch-col left-col">
+      <div class="touch-col-label" id="touch-left-label">Gauche</div>
+      <button class="touch-btn" id="tl-up">▲</button>
+      <button class="touch-btn" id="tl-down">▼</button>
+    </div>
+    <div class="touch-center">
+      <button class="touch-pause" id="touch-pause-btn" onclick="togglePause()">▶ Démarrer</button>
+      <div class="bot-indicator" id="bot-indicator" style="display:none">🤖 Bot</div>
+      <button class="touch-pause" style="color:#E87070;border-color:rgba(232,112,112,.2);margin-top:2px" onclick="stopGame()">✕ Terminer</button>
+    </div>
+    <div class="touch-col right-col">
+      <div class="touch-col-label" id="touch-right-label">Droite</div>
+      <button class="touch-btn" id="tr-up">▲</button>
+      <button class="touch-btn" id="tr-down">▼</button>
+    </div>
+  </div>
+
+  <div class="desktop-hint">
+    🖱️ <strong style="color:var(--cream)">Clic</strong> = démarrer &nbsp;·&nbsp;
+    <strong style="color:var(--cream)">Clic + glisser</strong> = déplacer la raquette &nbsp;·&nbsp;
+    <span class="key">Z</span><span class="key">S</span> Gauche &nbsp;·&nbsp;
+    <span class="key">↑</span><span class="key">↓</span> Droite &nbsp;·&nbsp;
+    <span class="key">Espace</span> Pause &nbsp;·&nbsp;
+    <span class="key">Échap</span> Terminer
+  </div>
+</div>
+
+<!-- ══════════ LEADERBOARD ══════════ -->
+<div id="leaderboard-screen" class="screen">
+  <div class="lb-header">
+    <h2>🏆 Palmarès du Weekend</h2>
+    <p>Meilleurs scores de toutes les parties</p>
+  </div>
+  <div id="lb-full"></div>
+  <div class="lb-actions">
+    <button class="btn-ghost" onclick="loadLeaderboard();showToast('Scores actualisés !')">⟳ Actualiser</button>
+    <button class="btn-gold" onclick="showScreen('welcome-screen')" style="width:auto;padding:10px 22px">Jouer 🏓</button>
+  </div>
+</div>
+
+<!-- ══════════ END OVERLAY ══════════ -->
+<div id="overlay">
+  <div style="width:100%;max-width:480px;display:flex;flex-direction:column;gap:12px">
+
+    <!-- Résultat de la partie -->
+    <div class="card" style="text-align:center">
+      <h2 id="overlay-title" style="font-size:22px;margin-bottom:4px">🎉</h2>
+      <div class="big-score" id="overlay-score"></div>
+      <div class="result-text" id="overlay-text"></div>
+      <div class="overlay-btns" style="margin-top:12px">
+        <button class="btn-gold" onclick="restartGame()">Revanche 🏓</button>
+        <button class="btn-ghost" onclick="newPlayer()">Nouveau joueur</button>
+      </div>
+    </div>
+
+    <!-- Classement intégré -->
+    <div class="card">
+      <h2 style="font-size:16px;margin-bottom:10px">🏆 Classement du weekend</h2>
+      <div id="overlay-lb">
+        <div style="text-align:center;color:var(--muted);font-size:12px;padding:16px">Chargement…</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   CONFIG SCORES — Supabase
+   ═══════════════════════════════════════════════ */
+const SB_URL = "https://tsuhpiuqgyupnqskugox.supabase.co";
+const SB_KEY = "sb_publishable_LpmIQCFTvhYFWl3hSlFi6g_m7j2qHhd";
+const SB_HEADERS = {
+  "Content-Type":  "application/json",
+  "apikey":        SB_KEY,
+  "Authorization": "Bearer " + SB_KEY
+};
+
+/* ═══════════════════════════════════════════════
+   CANVAS
+   ═══════════════════════════════════════════════ */
+const canvas = document.getElementById('pong');
+const ctx    = canvas.getContext('2d');
+const GW = 560, GH = 340;
+canvas.width = GW; canvas.height = GH;
+
+const WIN_SCORE   = Infinity;
+const BALL_SPEED  = 4.8;
+const PAD_H = 72, PAD_W = 11, PAD_SPEED = 6;
+
+/* ═══════════════════════════════════════════════
+   BOT PROFILES — "modèle à l'ancienne"
+   Chaque niveau définit le comportement de l'IA :
+   - reactionDelay : nb de frames avant de réagir (simule un temps de réflexion)
+   - speedRatio    : fraction de la vitesse max utilisée (0 à 1)
+   - errorPixels   : écart aléatoire en pixels par rapport à la balle (imprécision)
+   - predictionFrames : combien de frames à l'avance l'IA anticipe la trajectoire
+   - missChance    : probabilité (0-1) de rater volontairement à chaque frame
+   ═══════════════════════════════════════════════ */
+const BOT_PROFILES = {
+  easy: {
+    label: "🌸 Facile",
+    cssClass: "easy",
+    ballSpeed: 4.2,          // +20% (était 3.5)
+    maxBallSpeed: 8,         // plafond bas
+    reactionDelay: 18,
+    speedRatio: 0.45,
+    errorPixels: 28,
+    predictionFrames: 0,
+    missChance: 0.10
+  },
+  medium: {
+    label: "⚡ Normal",
+    cssClass: "medium",
+    ballSpeed: 5.76,         // +20% (était 4.8)
+    maxBallSpeed: 11,
+    reactionDelay: 8,
+    speedRatio: 0.65,
+    errorPixels: 14,
+    predictionFrames: 8,
+    missChance: 0.04
+  },
+  hard: {
+    label: "🔥 Difficile",
+    cssClass: "hard",
+    ballSpeed: 6.3,
+    maxBallSpeed: 14,
+    reactionDelay: 3,
+    speedRatio: 0.88,
+    errorPixels: 6,
+    predictionFrames: 20,
+    missChance: 0.01
+  },
+  insane: {
+    label: "💀 Insane",
+    cssClass: "insane",
+    ballSpeed: 7.2,
+    maxBallSpeed: 18,        // plafond élevé
+    reactionDelay: 0,
+    speedRatio: 1.0,
+    errorPixels: 1,
+    predictionFrames: 60,
+    missChance: 0.0
+  }
+};
+
+/* ═══════════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════════ */
+let playerName = "", playerSide = null;
+let gameMode   = null;
+let difficulty = null;
+let scores     = { left: 0, right: 0 };
+let gameRunning = false, gamePaused = true;
+let animId = null, frameCount = 0;
+let leaderboard = [];
+let ball, paddles;
+let maxSpeedReached = 0;   // vitesse max en unités jeu pendant la partie
+
+// Conversion unités jeu → km/h fictif (1 unité ≈ 10 km/h, fun mais cohérent)
+const SPEED_TO_KMH = 10;
+
+// Bot state
+let botSide      = null;   // côté contrôlé par le bot
+let botTarget    = GH / 2; // position Y cible du bot
+let botReactIn   = 0;      // frames restantes avant la prochaine réaction
+let botMissing   = false;  // est-ce que le bot "laisse passer" intentionnellement
+
+// Touch state
+const touch = { left:{ up:false, down:false }, right:{ up:false, down:false } };
+
+/* Timer */
+const GAME_DURATION = 3 * 60; // 3 minutes en secondes
+let timeLeft  = GAME_DURATION;
+let timerInterval = null;
+
+/* ═══════════════════════════════════════════════
+   UI HELPERS
+   ═══════════════════════════════════════════════ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function showToast(msg, dur=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+function setStatus(msg) { document.getElementById('game-status').textContent = msg; }
+
+function updateTimerDisplay() {
+  const m   = Math.floor(timeLeft / 60);
+  const s   = timeLeft % 60;
+  const str = `${m}:${String(s).padStart(2,'0')}`;
+  const el  = document.getElementById('timer-display');
+  el.textContent = str;
+  el.classList.toggle('urgent', timeLeft <= 30);
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    if (gamePaused) return;          // le timer se met en pause aussi
+    timeLeft--;
+    updateTimerDisplay();
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      // Temps écoulé → le meneur gagne
+      const winner = scores.left > scores.right ? 'left'
+                   : scores.right > scores.left  ? 'right'
+                   : playerSide;                  // égalité → côté joueur
+      endGame(winner, true);                      // true = fin par timer
+    }
+  }, 1000);
+}
+
+function stopTimer() { clearInterval(timerInterval); }
+
+/* ═══════════════════════════════════════════════
+   WELCOME — Diff / Side  (solo uniquement)
+   ═══════════════════════════════════════════════ */
+// Mode toujours solo, raquette toujours gauche
+gameMode   = 'solo';
+playerSide = 'left';
+
+function selectDiff(d) {
+  difficulty = d;
+  document.querySelectorAll('.diff-btn').forEach(b => {
+    const cls = b.className.match(/d-(\w+)/)?.[1];
+    b.className = `diff-btn d-${cls}` + (cls === d ? ` sel-${cls}` : '');
+  });
+  updateStartBtn();
+}
+
+function selectSide(side) {
+  playerSide = side;
+  document.getElementById('btn-left').className  = 'side-btn' + (side==='left'  ? ' selected-left'  : '');
+  document.getElementById('btn-right').className = 'side-btn' + (side==='right' ? ' selected-right' : '');
+  updateStartBtn();
+}
+
+document.getElementById('player-name').addEventListener('input', updateStartBtn);
+function updateStartBtn() {
+  const name = document.getElementById('player-name').value.trim();
+  document.getElementById('start-btn').disabled = !(name && difficulty);
+}
+
+/* ═══════════════════════════════════════════════
+   GAME INIT
+   ═══════════════════════════════════════════════ */
+function startGame() {
+  playerName = document.getElementById('player-name').value.trim();
+  if (!playerName || !gameMode || !playerSide) return;
+  if (gameMode === 'solo' && !difficulty) return;
+
+  scores = { left:0, right:0 };
+  frameCount = 0;
+  timeLeft   = GAME_DURATION;
+  maxSpeedReached = 0;
+  botSide    = playerSide === 'left' ? 'right' : 'left';
+
+  resetBall(); resetPaddles();
+  resetBotState();
+
+  const profile = gameMode === 'solo' ? BOT_PROFILES[difficulty] : null;
+  const leftName  = playerSide === 'left'  ? playerName : (gameMode==='solo' ? `🤖 Bot` : 'Adversaire');
+  const rightName = playerSide === 'right' ? playerName : (gameMode==='solo' ? `🤖 Bot` : 'Adversaire');
+
+  document.getElementById('left-label').textContent          = leftName;
+  document.getElementById('right-label').textContent         = rightName;
+  document.getElementById('touch-left-label').textContent    = leftName;
+  document.getElementById('touch-right-label').textContent   = rightName;
+  document.getElementById('score-left').textContent  = '0';
+  document.getElementById('score-right').textContent = '0';
+
+  // Difficulty badge
+  const badge = document.getElementById('diff-badge');
+  if (gameMode === 'solo') {
+    badge.textContent  = profile.label;
+    badge.className    = `diff-badge ${profile.cssClass}`;
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+
+  // Bot side → désactive ses contrôles
+  const botIsLeft  = botSide === 'left';
+  const botIsRight = botSide === 'right';
+  document.getElementById('tl-up').classList.toggle('bot-disabled',   botIsLeft);
+  document.getElementById('tl-down').classList.toggle('bot-disabled', botIsLeft);
+  document.getElementById('tr-up').classList.toggle('bot-disabled',   botIsRight);
+  document.getElementById('tr-down').classList.toggle('bot-disabled', botIsRight);
+  document.getElementById('swipe-left').style.pointerEvents  = botIsLeft  ? 'none' : 'auto';
+  document.getElementById('swipe-right').style.pointerEvents = botIsRight ? 'none' : 'auto';
+  // Reset swipe state
+  swipeDelta.left = 0; swipeDelta.right = 0;
+  swipeId.left = null; swipeId.right = null;
+  lastTouchY.left = null; lastTouchY.right = null;
+
+  const botInd = document.getElementById('bot-indicator');
+  botInd.style.display = 'block';
+  botInd.textContent   = `🤖 ${profile.label}`;
+
+  setStatus('Appuyez sur ▶ pour commencer');
+  const pauseBtn = document.getElementById('touch-pause-btn');
+  if (pauseBtn) pauseBtn.textContent = '▶ Démarrer';
+
+  showScreen('game-screen');
+  updateTimerDisplay();
+  const speedEl = document.getElementById('speed-val');
+  if (speedEl) speedEl.textContent = '–';
+  gamePaused  = true;
+  gameRunning = true;
+  if (animId) cancelAnimationFrame(animId);
+  startTimer();
+  loop();
+}
+
+function resetBall() {
+  const profile = BOT_PROFILES[difficulty] || BOT_PROFILES.medium;
+  const spd   = profile.ballSpeed;
+  const angle = (Math.random() * Math.PI/3) - Math.PI/6;
+  const dir   = Math.random() < .5 ? 1 : -1;
+  ball = {
+    x: GW/2, y: GH/2,
+    vx: Math.cos(angle) * spd * dir,
+    vy: Math.sin(angle) * spd,
+    r: 7, speed: spd, trail: []
+  };
+  // Met à jour l'affichage vitesse dès la remise en jeu
+  const speedEl = document.getElementById('speed-val');
+  if (speedEl) speedEl.textContent = Math.round(spd * SPEED_TO_KMH);
+}
+
+function resetPaddles() {
+  paddles = {
+    left:  { x: 18,             y: GH/2 - PAD_H/2 },
+    right: { x: GW - 18 - PAD_W, y: GH/2 - PAD_H/2 }
+  };
+}
+
+function resetBotState() {
+  botTarget  = GH / 2;
+  botReactIn = 0;
+  botMissing = false;
+}
+
+/* ═══════════════════════════════════════════════
+   BOT AI — prédiction de trajectoire
+   ═══════════════════════════════════════════════ */
+function predictBallY(frames) {
+  // Simule la trajectoire de la balle sur N frames
+  let x = ball.x, y = ball.y, vx = ball.vx, vy = ball.vy;
+  for (let i = 0; i < frames; i++) {
+    x += vx; y += vy;
+    if (y - ball.r <= 0)  { y = ball.r;       vy *= -1; }
+    if (y + ball.r >= GH) { y = GH - ball.r;  vy *= -1; }
+    // Stop si la balle atteint le côté du bot
+    const atBot = botSide === 'left' ? x <= paddles.left.x + PAD_W + 10
+                                     : x >= paddles.right.x - 10;
+    if (atBot) break;
+  }
+  return y;
+}
+
+function updateBot() {
+  if (!botSide) return;
+  const profile = BOT_PROFILES[difficulty];
+  const pad     = paddles[botSide];
+  const ballComingToBot = botSide === 'left'  ? ball.vx < 0
+                                              : ball.vx > 0;
+
+  // ── Décision : recalcule la cible toutes les reactionDelay frames ──
+  if (botReactIn <= 0) {
+    botReactIn = profile.reactionDelay;
+
+    // Miss intentionnel ?
+    botMissing = Math.random() < profile.missChance;
+
+    if (botMissing) {
+      // Bouge vers un coin (stratégie de "rater")
+      botTarget = ball.vy > 0 ? 0 : GH;
+    } else if (ballComingToBot) {
+      // Prédit où la balle arrivera
+      const predictedY = predictBallY(profile.predictionFrames);
+      // Ajoute une erreur humaine aléatoire
+      const err = (Math.random() * 2 - 1) * profile.errorPixels;
+      botTarget = predictedY + err;
+    } else {
+      // La balle s'éloigne : revient au centre tranquillement
+      botTarget = GH / 2;
+    }
+  }
+  botReactIn--;
+
+  // ── Mouvement : déplace la raquette vers la cible ──
+  const botSpeed  = PAD_SPEED * profile.speedRatio;
+  const padCenter = pad.y + PAD_H / 2;
+  const diff      = botTarget - padCenter;
+
+  if (Math.abs(diff) > 2) {
+    const move = Math.min(Math.abs(diff), botSpeed) * Math.sign(diff);
+    pad.y = Math.max(0, Math.min(GH - PAD_H, pad.y + move));
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   INPUT — Keyboard
+   ═══════════════════════════════════════════════ */
+const keys = {};
+document.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code === 'Space')  { e.preventDefault(); togglePause(); }
+  if (e.code === 'Escape') { stopGame(); }
+});
+document.addEventListener('keyup', e => { keys[e.code] = false; });
+
+function togglePause() {
+  if (!gameRunning) return;
+  gamePaused = !gamePaused;
+  const btn = document.getElementById('touch-pause-btn');
+  if (gamePaused) {
+    setStatus('⏸ Pause'); if (btn) btn.textContent = '▶ Reprendre';
+  } else {
+    setStatus('');        if (btn) btn.textContent = '⏸ Pause';
+  }
+}
+
+function stopGame() {
+  if (!gameRunning) return;
+  stopTimer();
+  const winner = scores.left > scores.right ? 'left'
+               : scores.right > scores.left  ? 'right'
+               : playerSide;
+  endGame(winner);
+}
+
+/* ═══════════════════════════════════════════════
+   INPUT — Touch buttons (▲▼ fallback)
+   ═══════════════════════════════════════════════ */
+function bindTouch(id, side, dir) {
+  const el = document.getElementById(id);
+  const set = v => { touch[side][dir] = v; };
+  const maybeUnpause = () => { if (gamePaused && gameRunning) togglePause(); };
+  el.addEventListener('touchstart', e => { e.preventDefault(); maybeUnpause(); set(true);  }, { passive:false });
+  el.addEventListener('touchend',   e => { e.preventDefault(); set(false); }, { passive:false });
+  el.addEventListener('touchcancel',e => { e.preventDefault(); set(false); }, { passive:false });
+  el.addEventListener('mousedown', () => { maybeUnpause(); set(true);  });
+  el.addEventListener('mouseup',   () => set(false));
+  el.addEventListener('mouseleave',() => set(false));
+}
+bindTouch('tl-up',   'left',  'up');
+bindTouch('tl-down', 'left',  'down');
+bindTouch('tr-up',   'right', 'up');
+bindTouch('tr-down', 'right', 'down');
+
+/* ═══════════════════════════════════════════════
+   INPUT — Swipe relatif (mode trackpad)
+   ────────────────────────────────────────────────
+   Principe : on ne téléporte PAS la raquette sous
+   le doigt. On calcule le DELTA Y entre deux frames
+   et on déplace la raquette de ce delta × sensibilité.
+   → Aucun indicateur visuel, rien ne cache le jeu.
+   → Le pouce peut être n'importe où sur sa moitié.
+   → Multi-touch géré par identifiant.
+   ═══════════════════════════════════════════════ */
+const SWIPE_SENSITIVITY = 1.4;   // 1 = 1:1 avec le mouvement du doigt (en px CSS)
+
+// lastTouchY[side] : dernière position Y connue du doigt (px écran)
+const lastTouchY = { left: null, right: null };
+const swipeId    = { left: null, right: null };
+
+// swipeDelta[side] : delta accumulé à appliquer au prochain frame
+const swipeDelta = { left: 0, right: 0 };
+
+function setupSwipeZone(zoneId, side) {
+  const zone = document.getElementById(zoneId);
+
+  zone.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (swipeId[side] !== null) return;           // un doigt déjà actif
+    const t = e.changedTouches[0];
+    swipeId[side]    = t.identifier;
+    lastTouchY[side] = t.clientY;
+    swipeDelta[side] = 0;
+    if (gamePaused && gameRunning) togglePause(); // démarre si en pause
+  }, { passive: false });
+
+  zone.addEventListener('touchmove', e => {
+    e.preventDefault();
+    for (const t of e.changedTouches) {
+      if (t.identifier !== swipeId[side]) continue;
+      // Calcule le delta depuis la dernière position connue
+      const dy = t.clientY - lastTouchY[side];
+      lastTouchY[side] = t.clientY;
+      // Convertit px écran → px jeu (le canvas CSS peut être réduit)
+      const canvasRect  = canvas.getBoundingClientRect();
+      const screenToGame = GH / canvasRect.height;
+      swipeDelta[side] += dy * screenToGame * SWIPE_SENSITIVITY;
+      break;
+    }
+  }, { passive: false });
+
+  const endTouch = e => {
+    for (const t of e.changedTouches) {
+      if (t.identifier === swipeId[side]) {
+        swipeId[side]    = null;
+        lastTouchY[side] = null;
+        swipeDelta[side] = 0;
+        break;
+      }
+    }
+  };
+  zone.addEventListener('touchend',    endTouch, { passive: false });
+  zone.addEventListener('touchcancel', endTouch, { passive: false });
+}
+
+setupSwipeZone('swipe-left',  'left');
+setupSwipeZone('swipe-right', 'right');
+
+// Applique le delta swipe à la raquette et le remet à zéro
+function applySwipe(side) {
+  if (swipeDelta[side] === 0) return;
+  const pad = paddles[side];
+  pad.y = Math.max(0, Math.min(GH - PAD_H, pad.y + swipeDelta[side]));
+  swipeDelta[side] = 0;
+}
+
+/* ═══════════════════════════════════════════════
+   INPUT — Souris
+   Attaché sur la canvas-wrap (div autour du canvas)
+   pour éviter les problèmes de re-bind.
+   • Clic gauche simple  → démarre / dépause
+   • Clic maintenu + glisser → déplace la raquette
+   ═══════════════════════════════════════════════ */
+let mouseDown  = false;
+let mouseLastY = null;
+let mouseSide  = null;
+let justUnpaused = false; // évite de bouger au frame du dépause
+
+const canvasWrap = canvas.parentElement;
+
+canvasWrap.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;           // clic gauche uniquement
+  e.preventDefault();
+
+  // Détermine le côté selon la position X dans le canvas
+  const rect = canvas.getBoundingClientRect();
+  const relX = (e.clientX - rect.left) / rect.width;
+  const side = relX < 0.5 ? 'left' : 'right';
+
+  // Démarre ou dépause peu importe le côté
+  if (gameRunning && gamePaused) {
+    togglePause();
+    justUnpaused = true;
+    setTimeout(() => { justUnpaused = false; }, 80);
+  }
+
+  // Si côté bot → on a quand même dépausé mais on ne contrôle pas
+  if (side === botSide) return;
+
+  mouseSide  = side;
+  mouseDown  = true;
+  mouseLastY = e.clientY;
+});
+
+window.addEventListener('mousemove', e => {
+  if (!mouseDown || !mouseSide || !gameRunning || gamePaused || justUnpaused) return;
+  const dy = e.clientY - mouseLastY;
+  mouseLastY = e.clientY;
+  if (dy === 0) return;
+  const rect  = canvas.getBoundingClientRect();
+  const scale = GH / rect.height;
+  const pad   = paddles[mouseSide];
+  pad.y = Math.max(0, Math.min(GH - PAD_H, pad.y + dy * scale * SWIPE_SENSITIVITY));
+});
+
+window.addEventListener('mouseup',    () => { mouseDown = false; mouseSide = null; mouseLastY = null; });
+window.addEventListener('blur',       () => { mouseDown = false; mouseSide = null; mouseLastY = null; });
+function loop() {
+  if (!gameRunning) return;
+  update();
+  draw();
+  animId = requestAnimationFrame(loop);
+}
+
+function update() {
+  if (gamePaused) return;
+  frameCount++;
+
+  // ── Paddle joueur (côté playerSide uniquement) ──
+  const ps = playerSide;
+  if (ps === 'left') {
+    if (swipeDelta.left !== 0) {
+      applySwipe('left');
+    } else {
+      if (keys['KeyW'] || keys['KeyZ'] || touch.left.up)
+        paddles.left.y = Math.max(0, paddles.left.y - PAD_SPEED);
+      if (keys['KeyS'] || touch.left.down)
+        paddles.left.y = Math.min(GH - PAD_H, paddles.left.y + PAD_SPEED);
+    }
+  }
+  if (ps === 'right') {
+    if (swipeDelta.right !== 0) {
+      applySwipe('right');
+    } else {
+      if (keys['ArrowUp']   || touch.right.up)
+        paddles.right.y = Math.max(0, paddles.right.y - PAD_SPEED);
+      if (keys['ArrowDown'] || touch.right.down)
+        paddles.right.y = Math.min(GH - PAD_H, paddles.right.y + PAD_SPEED);
+    }
+  }
+
+  // ── Bot ──
+  updateBot();
+
+  // ── Ball ──
+  ball.trail.push({ x:ball.x, y:ball.y });
+  if (ball.trail.length > 8) ball.trail.shift();
+
+  ball.x += ball.vx; ball.y += ball.vy;
+
+  // ── Vitesse courante + max ──
+  const currentSpeed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+  if (currentSpeed > maxSpeedReached) maxSpeedReached = currentSpeed;
+  const speedEl = document.getElementById('speed-val');
+  if (speedEl) speedEl.textContent = Math.round(currentSpeed * SPEED_TO_KMH);
+
+  if (ball.y - ball.r <= 0)  { ball.y = ball.r;      ball.vy *= -1; }
+  if (ball.y + ball.r >= GH) { ball.y = GH - ball.r; ball.vy *= -1; }
+
+  checkPaddle('left');
+  checkPaddle('right');
+
+  // ── Score ──
+  if (ball.x - ball.r <= 0) {
+    scores.right++;
+    updateScoreUI();
+    if (scores.right >= WIN_SCORE) { endGame('right'); return; }
+    resetBall(); resetBotState(); gamePaused = true;
+    const who = botSide === 'right' ? '🤖 Bot' : '🌸 Droite';
+    setStatus(`${who} marque !`);
+    const btn = document.getElementById('touch-pause-btn'); if(btn) btn.textContent = '▶ Reprendre';
+  }
+  if (ball.x + ball.r >= GW) {
+    scores.left++;
+    updateScoreUI();
+    if (scores.left >= WIN_SCORE) { endGame('left'); return; }
+    resetBall(); resetBotState(); gamePaused = true;
+    const who = botSide === 'left' ? '🤖 Bot' : '🥂 Gauche';
+    setStatus(`${who} marque !`);
+    const btn = document.getElementById('touch-pause-btn'); if(btn) btn.textContent = '▶ Reprendre';
+  }
+}
+
+function checkPaddle(side) {
+  const p = paddles[side];
+  const inX = side === 'left'
+    ? ball.x - ball.r <= p.x + PAD_W && ball.x - ball.r >= p.x - 2
+    : ball.x + ball.r >= p.x - 2     && ball.x + ball.r <= p.x + PAD_W;
+  const inY = ball.y + ball.r >= p.y && ball.y - ball.r <= p.y + PAD_H;
+  if (inX && inY) {
+    const maxSpd = (BOT_PROFILES[difficulty] || BOT_PROFILES.medium).maxBallSpeed;
+    const hit    = (ball.y - (p.y + PAD_H/2)) / (PAD_H/2);
+    const angle  = hit * (Math.PI / 3.5);
+    ball.speed   = Math.min(ball.speed * 1.05, maxSpd);
+    const dir    = side === 'left' ? 1 : -1;
+    ball.vx = Math.cos(angle) * ball.speed * dir;
+    ball.vy = Math.sin(angle) * ball.speed;
+    if (side === 'left') ball.x = p.x + PAD_W + ball.r + 1;
+    else                 ball.x = p.x - ball.r - 1;
+  }
+}
+
+function updateScoreUI() {
+  document.getElementById('score-left').textContent  = scores.left;
+  document.getElementById('score-right').textContent = scores.right;
+}
+
+/* ═══════════════════════════════════════════════
+   DRAW
+   ═══════════════════════════════════════════════ */
+function draw() {
+  ctx.fillStyle = '#1A1512';
+  ctx.fillRect(0, 0, GW, GH);
+
+  ctx.setLineDash([6, 10]);
+  ctx.strokeStyle = 'rgba(201,168,76,.1)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(GW/2, 0); ctx.lineTo(GW/2, GH); ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.beginPath(); ctx.arc(GW/2, GH/2, 32, 0, Math.PI*2);
+  ctx.strokeStyle = 'rgba(201,168,76,.06)'; ctx.lineWidth = 1.5; ctx.stroke();
+
+  // Trail
+  ball.trail.forEach((t, i) => {
+    const a = (i / ball.trail.length) * 0.28;
+    ctx.beginPath(); ctx.arc(t.x, t.y, ball.r * (i/ball.trail.length) * .8, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(201,168,76,${a})`; ctx.fill();
+  });
+
+  // Ball
+  const g = ctx.createRadialGradient(ball.x-2, ball.y-2, 1, ball.x, ball.y, ball.r);
+  g.addColorStop(0, '#F0D080'); g.addColorStop(1, '#C9A84C');
+  ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
+  ctx.fillStyle = g; ctx.fill();
+
+  // Paddles
+  drawPaddle(paddles.left,  '#C9A84C');
+  drawPaddle(paddles.right, '#E8C8C0');
+
+  // Bot indicator (barre colorée côté bot)
+  if (botSide && !gamePaused) {
+    const profile = BOT_PROFILES[difficulty];
+    const colors  = { easy:'#7EC8A0', medium:'#C9A84C', hard:'#E87070', insane:'#C070E8' };
+    const bx = botSide === 'left' ? 0 : GW - 3;
+    ctx.fillStyle = colors[difficulty] + '55';
+    ctx.fillRect(bx, 0, 3, GH);
+  }
+
+  // Pause overlay
+  if (gamePaused && gameRunning) {
+    ctx.fillStyle = 'rgba(26,21,18,.45)'; ctx.fillRect(0, 0, GW, GH);
+    ctx.fillStyle = 'rgba(201,168,76,.75)';
+    ctx.font = 'bold 30px serif'; ctx.textAlign = 'center';
+    ctx.fillText('▶', GW/2, GH/2 + 11);
+  }
+}
+
+function drawPaddle(p, color) {
+  ctx.beginPath(); ctx.roundRect(p.x, p.y, PAD_W, PAD_H, 5);
+  const grd = ctx.createLinearGradient(p.x, 0, p.x + PAD_W, 0);
+  grd.addColorStop(0, color); grd.addColorStop(1, color + 'AA');
+  ctx.fillStyle = grd;
+  ctx.shadowColor = color; ctx.shadowBlur = 14;
+  ctx.fill(); ctx.shadowBlur = 0;
+}
+
+/* ═══════════════════════════════════════════════
+   END GAME
+   ═══════════════════════════════════════════════ */
+function endGame(winningSide, byTimer = false) {
+  gameRunning = false;
+  stopTimer();
+  cancelAnimationFrame(animId);
+
+  const playerWon = winningSide === playerSide;
+  const winScore  = scores[winningSide];
+  const loseScore = scores[winningSide === 'left' ? 'right' : 'left'];
+
+  let title, text;
+  if (byTimer) {
+    if (playerWon) {
+      title = '⏱️ Temps écoulé !';
+      text  = `${playerName} gagne ${winScore}–${loseScore} · Tu mènes au buzzer !`;
+    } else if (winScore === loseScore) {
+      title = '⏱️ Égalité !';
+      text  = `${winScore}–${loseScore} · Quel match serré !`;
+    } else {
+      const profile = BOT_PROFILES[difficulty];
+      title = '⏱️ Temps écoulé !';
+      text  = `Bot ${profile.label} gagne ${winScore}–${loseScore} · La revanche ?`;
+    }
+  } else if (playerWon) {
+    title = '🎉 Victoire !';
+    const taunts = ['Tu as battu le bot !', 'Impressionnant !', 'Le bot s\'incline devant toi !'];
+    text = `${playerName} gagne ${winScore}–${loseScore} · ${taunts[Math.floor(Math.random()*taunts.length)]}`;
+  } else {
+    const profile = BOT_PROFILES[difficulty];
+    title = '🤖 Le bot gagne !';
+    const taunts = ['La revanche ?', 'Essaie un niveau inférieur !', 'Le bot te nargue… !'];
+    text = `Bot ${profile.label} gagne ${winScore}–${loseScore} · ${taunts[Math.floor(Math.random()*taunts.length)]}`;
+  }
+
+  document.getElementById('overlay-title').textContent = title;
+  document.getElementById('overlay-score').textContent = `${winScore} – ${loseScore}`;
+  document.getElementById('overlay-text').textContent  = text;
+  document.getElementById('overlay').classList.add('show');
+
+  // Affiche d'abord ce qu'on a déjà en mémoire
+  renderOverlayLeaderboard();
+
+  // Sauvegarde toujours : won = points joueur, lost = points bot
+  const playerScore = scores[playerSide];
+  const botScore    = scores[botSide];
+  const maxSpeedKmh = Math.round(maxSpeedReached * SPEED_TO_KMH);
+  saveScore(playerName, playerScore, botScore, playerSide, difficulty, maxSpeedKmh, playerWon ? 'player' : 'bot');
+}
+
+function restartGame() {
+  document.getElementById('overlay').classList.remove('show');
+  startGame();
+}
+function newPlayer() {
+  document.getElementById('overlay').classList.remove('show');
+  showScreen('welcome-screen');
+  loadLeaderboard();
+}
+
+/* ═══════════════════════════════════════════════
+   LEADERBOARD — Supabase REST API
+   ═══════════════════════════════════════════════ */
+async function saveScore(name, won, lost, side, tag, maxSpeed, winner) {
+  const entry = {
+    name, won, lost, side, tag,
+    max_speed: maxSpeed || 0,
+    winner:    winner || 'player',
+    score_str: `${won}–${lost}`,
+    game_date: new Date().toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }),
+    ts: Date.now()
+  };
+
+  // Sauvegarde locale toujours
+  const local = getLocalScores();
+  local.push({ ...entry, scoreStr: entry.score_str, date: entry.game_date });
+  local.sort((a,b) => b.won - a.won || a.lost - b.lost || a.ts - b.ts);
+  localStorage.setItem('wedding_pong_scores', JSON.stringify(local));
+
+  // Sauvegarde Supabase
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/scores`, {
+      method:  'POST',
+      headers: SB_HEADERS,
+      body:    JSON.stringify(entry)
+    });
+    if (!r.ok) throw new Error(await r.text());
+    showToast('Score sauvegardé ! 🏆');
+    await loadLeaderboard();
+    renderOverlayLeaderboard();
+    renderLBPreview();
+  } catch(err) {
+    console.error('Supabase save error:', err);
+    leaderboard = local;
+    showToast('Score sauvegardé localement ✓');
+  }
+}
+
+function getLocalScores() {
+  try { return JSON.parse(localStorage.getItem('wedding_pong_scores') || '[]'); } catch { return []; }
+}
+
+async function loadLeaderboard() {
+  try {
+    const r = await fetch(
+      `${SB_URL}/rest/v1/scores?select=name,won,lost,side,tag,score_str,game_date,ts,max_speed,winner&limit=200`,
+      { headers: SB_HEADERS }
+    );
+    if (!r.ok) throw new Error(await r.text());
+    const data = await r.json();
+
+    // Poids par difficulté pour le tri
+    const diffWeight = { insane: 4, hard: 3, medium: 2, easy: 1 };
+
+    leaderboard = data
+      .filter(e => e.name)
+      .map(e => ({ ...e, scoreStr: e.score_str, date: e.game_date }))
+      .sort((a, b) => {
+        const da = diffWeight[a.tag] || 0;
+        const db = diffWeight[b.tag] || 0;
+        if (db !== da) return db - da;                          // difficulté la plus haute
+        const wa = a.winner === 'player' ? 1 : 0;
+        const wb = b.winner === 'player' ? 1 : 0;
+        if (wb !== wa) return wb - wa;                          // victoire joueur avant bot
+        if (b.won !== a.won) return b.won - a.won;             // plus de points
+        if (a.lost !== b.lost) return a.lost - b.lost;         // moins encaissés
+        return a.ts - b.ts;
+      })
+      .slice(0, 50);
+
+  } catch(err) {
+    console.error('Supabase load error:', err);
+    leaderboard = getLocalScores();
+  }
+  renderLeaderboard();
+  renderLBPreview();
+}
+
+function renderLeaderboard() {
+  const el = document.getElementById('lb-full');
+  if (!leaderboard.length) {
+    el.innerHTML = '<div class="no-scores">Aucune partie encore.<br>Soyez le premier dans l\'histoire ! 🏆</div>';
+    return;
+  }
+  const diffLabel = { easy:'Facile', medium:'Normal', hard:'Difficile', insane:'Insane' };
+  const diffCls   = { easy:'easy', medium:'medium', hard:'hard', insane:'insane' };
+  const rows = leaderboard.filter(e => e.name).slice(0,20).map((e,i) => {
+    const rc      = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'';
+    const medal   = i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
+    const dot     = `<span class="side-dot ${e.side==='left'?'dot-left':'dot-right'}"></span>`;
+    const diff    = e.tag && diffLabel[e.tag]
+      ? `<span class="diff-badge ${diffCls[e.tag]}" style="margin-left:4px;font-size:8px">${diffLabel[e.tag]}</span>`
+      : '';
+    const isBot   = e.winner === 'bot';
+    const winnerBadge = isBot
+      ? `<span style="font-size:9px;color:#E87070;border:1px solid rgba(232,112,112,.4);border-radius:4px;padding:1px 5px;margin-left:4px">🤖 Bot gagne</span>`
+      : '';
+    const nameStyle = isBot ? 'opacity:.7' : '';
+    // Score : toujours affiché "Joueur X – Bot Y" avec couleur selon vainqueur
+    const [playerPts, botPts] = (e.scoreStr || '0–0').split('–');
+    const scoreHtml = isBot
+      ? `<span style="color:var(--muted)">${playerPts}</span><span style="color:var(--muted)"> – </span><span style="color:#E87070;font-weight:700">${botPts}🤖</span>`
+      : `<span style="color:var(--gold);font-weight:700">${playerPts}</span><span style="color:var(--muted)"> – </span><span style="color:var(--muted)">${botPts}</span>`;
+    return `<tr>
+      <td class="rank-cell ${rc}">${medal}</td>
+      <td class="winner-cell" style="${nameStyle}">${dot}${esc(e.name)}${diff}${winnerBadge}</td>
+      <td class="score-cell" style="font-family:'Playfair Display',serif">${scoreHtml}</td>
+      <td class="date-cell" style="color:var(--blush)">${e.max_speed ? e.max_speed + ' km/h' : '–'}</td>
+      <td class="date-cell">${esc(e.date||'')}</td>
+    </tr>`;
+  }).join('');
+  el.innerHTML = `<table class="lb-table"><thead><tr><th>#</th><th>Joueur · Difficulté</th><th>Score</th><th>⚡ Max</th><th>Date</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function renderLBPreview() {
+  const el = document.getElementById('lb-preview');
+  if (!leaderboard.length) { el.innerHTML = '<div class="no-scores" style="padding:10px">Pas encore de scores !</div>'; return; }
+  const diffLabel = { easy:'Facile', medium:'Normal', hard:'Difficile', insane:'Insane' };
+  const diffCls   = { easy:'easy', medium:'medium', hard:'hard', insane:'insane' };
+  el.innerHTML = leaderboard.slice(0,3).map((e,i) => {
+    const medal  = i===0?'🥇':i===1?'🥈':'🥉';
+    const diff   = e.tag && diffLabel[e.tag]
+      ? `<span class="diff-badge ${diffCls[e.tag]}" style="font-size:8px;padding:1px 5px;margin-left:5px">${diffLabel[e.tag]}</span>`
+      : '';
+    const isBot  = e.winner === 'bot';
+    const [playerPts, botPts] = (e.scoreStr || '0–0').split('–');
+    const scoreHtml = isBot
+      ? `<span style="color:var(--muted)">${playerPts} – </span><span style="color:#E87070;font-weight:700">${botPts}🤖</span>`
+      : `<span style="color:var(--gold);font-weight:700">${playerPts}</span><span style="color:var(--muted)"> – ${botPts}</span>`;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+      <span style="font-size:12px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;${isBot?'opacity:.7':''}">${medal} <strong>${esc(e.name)}</strong>${diff}</span>
+      <span style="font-family:'Playfair Display',serif;font-size:13px;white-space:nowrap;margin-left:8px">${scoreHtml}</span>
+    </div>`;
+  }).join('');
+}
+
+function showLeaderboard() { loadLeaderboard(); showScreen('leaderboard-screen'); }
+
+function renderOverlayLeaderboard() {
+  const el = document.getElementById('overlay-lb');
+  if (!el) return;
+  if (!leaderboard.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:12px">Aucun score encore.</div>';
+    return;
+  }
+  const diffLabel = { easy:'Facile', medium:'Normal', hard:'Difficile', insane:'Insane' };
+  const diffCls   = { easy:'easy', medium:'medium', hard:'hard', insane:'insane' };
+  const rows = leaderboard.slice(0, 10).map((e, i) => {
+    const medal   = i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}`;
+    const diff    = e.tag && diffLabel[e.tag]
+      ? `<span class="diff-badge ${diffCls[e.tag]}" style="font-size:8px;padding:1px 5px;margin-left:4px">${diffLabel[e.tag]}</span>`
+      : '';
+    const isCurrent = e.name === playerName && e.scoreStr === `${scores[playerSide]}–${scores[botSide]}`;
+    const style = isCurrent ? 'background:rgba(201,168,76,.12);border-radius:6px;' : '';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 4px;border-bottom:1px solid rgba(255,255,255,.04);${style}">
+      <span style="font-size:12px;min-width:22px">${medal}</span>
+      <span style="flex:1;font-size:12px;font-weight:600;color:var(--cream);display:flex;align-items:center;flex-wrap:wrap;gap:2px">${esc(e.name)}${diff}</span>
+      <span style="color:var(--blush);font-size:11px;margin-right:8px;white-space:nowrap">${e.max_speed ? e.max_speed + ' km/h' : ''}</span>
+      <span style="font-family:'Playfair Display',serif;color:var(--gold);font-size:13px">${esc(e.scoreStr)}</span>
+    </div>`;
+  }).join('');
+  el.innerHTML = rows;
+}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ═══════════════════════════════════════════════
+   PARTICLES
+   ═══════════════════════════════════════════════ */
+(function() {
+  const c = document.getElementById('particles');
+  const colors = ['#C9A84C','#F0D080','#E8C8C0','#FFFFFF','#D4B896'];
+  for (let i=0;i<16;i++) {
+    const p = document.createElement('div'); p.className = 'petal';
+    p.style.cssText=`left:${Math.random()*100}vw;background:${colors[i%colors.length]};animation-duration:${7+Math.random()*9}s;animation-delay:${Math.random()*10}s;width:${4+Math.random()*5}px;height:${4+Math.random()*5}px`;
+    c.appendChild(p);
+  }
+})();
+
+/* ═══════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════ */
+loadLeaderboard();
+resetBall(); resetPaddles(); draw();
+</script>
+</body>
+</html>

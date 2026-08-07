@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Wedding SPIKEBALL</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;600&display=swap');
+
+  :root {
+    --gold:#C9A84C; --gold-light:#F0D080;
+    --cream:#FAF6EE; --blush:#E8C8C0;
+    --dark:#1A1512;  --muted:#8A7E72;
+  }
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{background:var(--dark);font-family:'Montserrat',sans-serif;color:var(--cream);min-height:100%;overflow-x:hidden;}
+
+  /* ── Particles ── */
+  #particles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+  .petal{position:absolute;border-radius:50% 0;opacity:0;animation:fall linear infinite;}
+  @keyframes fall{0%{transform:translateY(-20px) rotate(0deg);opacity:.7}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+
+  /* ── Header ── */
+  #header{position:relative;z-index:10;text-align:center;padding:16px 20px 4px;}
+  #header h1{font-family:'Playfair Display',serif;font-size:clamp(20px,5vw,34px);color:var(--gold);letter-spacing:.05em;}
+  #header .subtitle{font-size:10px;color:var(--muted);letter-spacing:.2em;text-transform:uppercase;margin-top:3px;}
+
+  /* ── Screens ── */
+  .screen{display:none;position:relative;z-index:10;flex-direction:column;align-items:center;padding:12px 14px;gap:12px;}
+  .screen.active{display:flex;}
+
+  /* ── Cards ── */
+  .card{background:rgba(255,255,255,.05);border:1px solid rgba(201,168,76,.25);border-radius:16px;padding:20px 22px;width:100%;max-width:480px;backdrop-filter:blur(8px);}
+  .card h2{font-family:'Playfair Display',serif;color:var(--gold);font-size:17px;margin-bottom:12px;text-align:center;}
+  .field-label{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+  input[type="text"]{width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(201,168,76,.3);border-radius:8px;color:var(--cream);font-family:'Montserrat',sans-serif;font-size:16px;padding:10px 14px;outline:none;transition:border-color .2s;margin-bottom:12px;}
+  input[type="text"]:focus{border-color:var(--gold);}
+  input[type="text"]::placeholder{color:var(--muted);}
+
+  /* ── Buttons ── */
+  .btn-gold{width:100%;padding:13px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--dark);font-family:'Playfair Display',serif;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.05em;transition:opacity .2s,transform .1s;}
+  .btn-gold:active{transform:scale(.97);}
+  .btn-gold:disabled{opacity:.35;cursor:not-allowed;}
+  .btn-ghost{padding:9px 18px;border:1px solid rgba(201,168,76,.4);border-radius:8px;background:transparent;color:var(--gold);font-family:'Montserrat',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;}
+  .btn-ghost:active{background:rgba(201,168,76,.1);}
+  .divider{width:100%;max-width:640px;height:1px;background:linear-gradient(to right,transparent,rgba(201,168,76,.2),transparent);}
+
+  /* ── HUD ── */
+  #game-screen{padding:6px 10px;gap:8px;}
+  .hud{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:640px;}
+  .hud-item{display:flex;flex-direction:column;align-items:center;min-width:90px;}
+  .hud-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:1px;}
+  .hud-val{font-family:'Playfair Display',serif;font-size:32px;line-height:1;color:var(--gold);}
+  .hud-center{text-align:center;}
+  .hud-name{font-size:12px;color:var(--cream);letter-spacing:.04em;}
+  .hud-balls{font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:.06em;}
+
+  /* ── Canvas ── */
+  .canvas-wrap{border:1px solid rgba(201,168,76,.2);border-radius:10px;overflow:hidden;box-shadow:0 0 40px rgba(201,168,76,.07);width:100%;max-width:640px;position:relative;cursor:pointer;}
+  #gameCanvas{display:block;width:100%;height:auto;touch-action:none;}
+
+  /* ── In-canvas overlay ── */
+  .game-overlay{display:none;position:absolute;inset:0;background:rgba(26,21,18,.9);flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:24px;}
+  .game-overlay.show{display:flex;}
+  .overlay-icon{font-size:36px;line-height:1;}
+  .overlay-title{font-family:'Playfair Display',serif;font-size:clamp(18px,4vw,26px);color:var(--gold);letter-spacing:.04em;}
+  .overlay-sub{font-size:12px;color:var(--muted);letter-spacing:.07em;line-height:1.7;max-width:380px;}
+  .btn-sm-gold{padding:12px 30px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--dark);font-family:'Playfair Display',serif;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.05em;transition:transform .1s;}
+  .btn-sm-gold:active{transform:scale(.97);}
+
+  /* ── End overlay (plein écran) ── */
+  #overlay{display:none;position:fixed;inset:0;background:var(--dark);z-index:100;align-items:flex-start;justify-content:center;overflow-y:auto;padding:16px 12px;}
+  #overlay.show{display:flex;}
+  #overlay .inner{width:100%;max-width:480px;display:flex;flex-direction:column;gap:12px;}
+  #overlay .card{max-width:480px;width:100%;}
+  #overlay .big-score{font-family:'Playfair Display',serif;font-size:48px;color:var(--gold);text-align:center;}
+  #overlay .result-text{color:var(--muted);font-size:12px;line-height:1.7;text-align:center;}
+  .overlay-btns{display:flex;gap:7px;flex-direction:column;margin-top:12px;}
+
+  /* ── Leaderboard ── */
+  #leaderboard-screen{gap:12px;}
+  .lb-header{text-align:center;}
+  .lb-header h2{font-family:'Playfair Display',serif;color:var(--gold);font-size:22px;}
+  .lb-header p{font-size:10px;color:var(--muted);margin-top:3px;}
+  .lb-table{width:100%;max-width:500px;border-collapse:collapse;}
+  .lb-table thead tr{border-bottom:1px solid rgba(201,168,76,.2);}
+  .lb-table th{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);padding:6px 8px;text-align:left;}
+  .lb-table td{padding:8px;font-size:12px;border-bottom:1px solid rgba(255,255,255,.04);}
+  .rank-cell{color:var(--muted);font-size:11px;width:28px;}
+  .rank-1{color:var(--gold);font-weight:700;}
+  .rank-2{color:#B8B8B8;}
+  .rank-3{color:#CD7F32;}
+  .winner-cell{color:var(--cream);font-weight:600;}
+  .date-cell{color:var(--muted);font-size:10px;}
+  .no-scores{text-align:center;color:var(--muted);font-size:12px;padding:24px;font-style:italic;}
+  .lb-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+
+  /* ── Toast ── */
+  #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:rgba(201,168,76,.92);color:var(--dark);font-weight:600;font-size:12px;padding:9px 20px;border-radius:40px;z-index:200;transition:transform .3s;white-space:nowrap;}
+  #toast.show{transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div id="particles"></div>
+
+<div id="header">
+  <h1>🏐 Wedding SPIKEBALL</h1>
+  <div class="subtitle">Maintiens les balles en l'air · Jeu des mariés</div>
+</div>
+
+<!-- ══════ WELCOME ══════ -->
+<div id="welcome-screen" class="screen active">
+  <div class="card">
+    <h2>Prêt·e à jongler ? 🏐</h2>
+    <div class="field-label">Votre prénom</div>
+    <input type="text" id="player-name" placeholder="Marie, Jean, Mamie Gisèle…" maxlength="20" autocomplete="off"/>
+    <button class="btn-gold" id="start-btn" onclick="startGame()" disabled>Commencer ! 🏐</button>
+    <div style="margin-top:10px;font-size:10px;color:var(--muted);text-align:center;letter-spacing:.06em;line-height:1.8">
+      🖱️ PC · Clic sur une balle · ou <strong style="color:var(--gold)">Espace</strong> pour frapper la plus basse<br>
+      📱 Mobile · Touchez les balles · ou bouton 🏐 sous le terrain<br>
+      Si une balle touche le bas, la partie s'arrête.
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="card">
+    <h2>🏆 Palmarès du weekend</h2>
+    <div id="lb-preview"></div>
+    <br>
+    <button class="btn-ghost" onclick="showLeaderboard()">Voir le classement complet →</button>
+  </div>
+</div>
+
+<!-- ══════ GAME ══════ -->
+<div id="game-screen" class="screen">
+  <div class="hud">
+    <div class="hud-item">
+      <div class="hud-label">Balles</div>
+      <div class="hud-val" id="hud-balls">1</div>
+    </div>
+    <div class="hud-center">
+      <div class="hud-name" id="hud-name">—</div>
+      <div class="hud-balls" id="hud-level">Niveau 1</div>
+    </div>
+    <div class="hud-item">
+      <div class="hud-label">Record</div>
+      <div class="hud-val" id="hud-best">0</div>
+    </div>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="gameCanvas" width="640" height="420"></canvas>
+    <div class="game-overlay show" id="startOverlay">
+      <div class="overlay-icon">🏐</div>
+      <div class="overlay-title">Spikeball</div>
+      <div class="overlay-sub">Cliquez / touchez les balles pour les maintenir en l'air.<br>Une balle touche le bas → partie terminée.<br>Une nouvelle balle toutes les 3 secondes !</div>
+      <button class="btn-sm-gold" onclick="launchGame()">C'est parti ! 🏐</button>
+    </div>
+  </div>
+
+  <!-- Bouton tap + hint clavier (toujours visible) -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;max-width:640px;">
+    <button id="tapBtn" onclick="tapNearest()"
+      style="padding:14px 40px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--dark);font-family:'Playfair Display',serif;font-size:16px;font-weight:700;cursor:pointer;letter-spacing:.05em;transition:transform .1s;width:100%;max-width:320px;"
+      onmousedown="this.style.transform='scale(.96)'" onmouseup="this.style.transform=''" ontouchstart="this.style.transform='scale(.96)'" ontouchend="this.style.transform=''">
+      🏐 Frapper la balle !
+    </button>
+    <p style="font-size:10px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;text-align:center;">
+      Clic / touch sur une balle · ou <kbd style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:3px;padding:1px 6px;font-size:10px;color:var(--cream);">Espace</kbd> pour frapper la plus basse
+    </p>
+  </div>
+</div>
+
+<!-- ══════ LEADERBOARD ══════ -->
+<div id="leaderboard-screen" class="screen">
+  <div class="lb-header">
+    <h2>🏆 Palmarès du Weekend</h2>
+    <p>Meilleurs scores Spikeball de toutes les parties</p>
+  </div>
+  <div id="lb-full"></div>
+  <div class="lb-actions">
+    <button class="btn-ghost" onclick="loadLeaderboard();showToast('Scores actualisés !')">⟳ Actualiser</button>
+    <button class="btn-gold" onclick="showScreen('welcome-screen')" style="width:auto;padding:10px 22px">Jouer 🏐</button>
+  </div>
+</div>
+
+<!-- ══════ END OVERLAY ══════ -->
+<div id="overlay">
+  <div class="inner">
+    <div class="card" style="text-align:center;">
+      <h2 id="overlay-title" style="font-size:22px;margin-bottom:4px;">🎉</h2>
+      <div class="big-score" id="overlay-score"></div>
+      <div class="result-text" id="overlay-text"></div>
+      <div class="overlay-btns">
+        <button class="btn-gold" onclick="replayGame()">Rejouer 🏐</button>
+        <button class="btn-ghost" onclick="newPlayer()">Nouveau joueur</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2 style="font-size:16px;margin-bottom:10px;">🏆 Classement du weekend</h2>
+      <div id="overlay-lb"><div style="text-align:center;color:var(--muted);font-size:12px;padding:16px">Chargement…</div></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   SUPABASE — même projet que Pong & Snake
+   ═══════════════════════════════════════════════ */
+const SB_URL = "https://tsuhpiuqgyupnqskugox.supabase.co";
+const SB_KEY = "sb_publishable_LpmIQCFTvhYFWl3hSlFi6g_m7j2qHhd";
+const SB_HEADERS = {
+  "Content-Type":  "application/json",
+  "apikey":        SB_KEY,
+  "Authorization": "Bearer " + SB_KEY
+};
+
+/* ═══════════════════════════════════════════════
+   CONFIG JEU (fidèle à l'original)
+   ═══════════════════════════════════════════════ */
+const SPEED       = 2.5;
+const BALL_RADIUS = 26;
+const HIT_BONUS   = 28;
+const ADD_INTERVAL= 3000;
+const MAX_BALLS   = Infinity;
+
+// Palette mariage (or, blush, crème, muted + quelques couleurs fêtardes)
+const COLORS = [
+  '#C9A84C', // or
+  '#E8C8C0', // blush
+  '#8B5CF6', // violet fête
+  '#10b981', // vert
+  '#F0D080', // or clair
+  '#ec4899', // rose
+  '#06b6d4', // cyan
+  '#f97316', // orange
+];
+
+/* ═══════════════════════════════════════════════
+   CANVAS
+   ═══════════════════════════════════════════════ */
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+const W = canvas.width;   // 640
+const H = canvas.height;  // 420
+
+/* ═══════════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════════ */
+let playerName = '';
+let balls = [], running = false, rafId = null, nextAddTime = 0, level = 1;
+let best = 0, leaderboard = [];
+let lastScore = 0; // balles en jeu à la fin
+
+/* ═══════════════════════════════════════════════
+   UI HELPERS
+   ═══════════════════════════════════════════════ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+let toastT;
+function showToast(msg, dur=2500) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), dur);
+}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ═══════════════════════════════════════════════
+   WELCOME
+   ═══════════════════════════════════════════════ */
+document.getElementById('player-name').addEventListener('input', () => {
+  document.getElementById('start-btn').disabled = !document.getElementById('player-name').value.trim();
+});
+
+function startGame() {
+  playerName = document.getElementById('player-name').value.trim();
+  if (!playerName) return;
+  document.getElementById('hud-name').textContent = playerName;
+  showScreen('game-screen');
+  initGame();
+  document.getElementById('startOverlay').classList.add('show');
+  render(); // affiche un premier frame sous l'overlay
+}
+
+/* ═══════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════ */
+function makeBall(index) {
+  const sections = Math.max(balls.length + 1, 8); // répartition dynamique
+  const sectionW = W / sections;
+  const baseX = sectionW * (index % sections) + sectionW / 2;
+  const x = Math.max(BALL_RADIUS, Math.min(W - BALL_RADIUS, baseX + (Math.random() - 0.5) * sectionW * 0.5));
+  return {
+    x, y: BALL_RADIUS,
+    vx: (Math.random() - 0.5) * 2.2,
+    vy: SPEED,
+    r: BALL_RADIUS,
+    color: COLORS[index % COLORS.length],
+    pulse: 0, // effet de clic
+  };
+}
+
+function initGame() {
+  balls   = [makeBall(0)];
+  level   = 1;
+  running = false;
+  updateHUD();
+}
+
+function updateHUD() {
+  document.getElementById('hud-balls').textContent = balls.length;
+  document.getElementById('hud-level').textContent = 'Niveau ' + level;
+  if (balls.length > best) {
+    best = balls.length;
+    document.getElementById('hud-best').textContent = best;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   GAME LOOP
+   ═══════════════════════════════════════════════ */
+function launchGame() {
+  document.getElementById('startOverlay').classList.remove('show');
+  running     = true;
+  const startTs = performance.now();
+  nextAddTime   = startTs + ADD_INTERVAL;
+  rafId = requestAnimationFrame(gameLoop);
+}
+
+function replayGame() {
+  document.getElementById('overlay').classList.remove('show');
+  showScreen('game-screen');
+  initGame();
+  document.getElementById('startOverlay').classList.add('show');
+  render();
+}
+
+function newPlayer() {
+  document.getElementById('overlay').classList.remove('show');
+  showScreen('welcome-screen');
+  loadLeaderboard();
+}
+
+function gameLoop(timestamp) {
+  if (!running) return;
+
+  // Ajout progressif
+  if (balls.length < MAX_BALLS && timestamp >= nextAddTime) {
+    balls.push(makeBall(balls.length));
+    level++;
+    updateHUD();
+    nextAddTime = timestamp + ADD_INTERVAL;
+    showToast(`🏐 Balle ${balls.length} !`, 1000);
+  }
+
+  // Physique
+  for (const b of balls) {
+    b.x += b.vx; b.y += b.vy;
+    if (b.x - b.r < 0)  { b.x = b.r;     b.vx = Math.abs(b.vx); }
+    if (b.x + b.r > W)  { b.x = W - b.r; b.vx = -Math.abs(b.vx); }
+    if (b.y - b.r <= 0) { b.y = b.r;     b.vy = SPEED; }
+    if (b.pulse > 0) b.pulse -= 0.08;
+
+    if (b.y - b.r > H) { endGame(); return; }
+  }
+
+  render();
+  rafId = requestAnimationFrame(gameLoop);
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER — thème mariage
+   ═══════════════════════════════════════════════ */
+function render() {
+  // Fond sombre mariage
+  ctx.fillStyle = '#120D09';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grille subtile (clin d'œil nokia/pong)
+  ctx.strokeStyle = 'rgba(201,168,76,.04)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  // Zone de danger (bas)
+  const dH = 38;
+  ctx.fillStyle = 'rgba(232,112,112,.07)';
+  ctx.fillRect(0, H - dH, W, dH);
+  // Ligne de danger dorée/rouge
+  const grad = ctx.createLinearGradient(0, 0, W, 0);
+  grad.addColorStop(0, 'transparent');
+  grad.addColorStop(0.3, 'rgba(232,112,112,.6)');
+  grad.addColorStop(0.7, 'rgba(201,168,76,.6)');
+  grad.addColorStop(1, 'transparent');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, H - 3, W, 3);
+
+  // Balles
+  for (const b of balls) drawBall(b);
+}
+
+function drawBall(b) {
+  ctx.save();
+
+  // Halo or (glow)
+  const glowR = b.r + 10 + b.pulse * 12;
+  const glow  = ctx.createRadialGradient(b.x, b.y, b.r * 0.3, b.x, b.y, glowR);
+  glow.addColorStop(0, b.color + '55');
+  glow.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(b.x, b.y, glowR, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Ombre portée
+  ctx.shadowColor  = 'rgba(0,0,0,0.4)';
+  ctx.shadowBlur   = 12;
+  ctx.shadowOffsetY= 4;
+
+  // Corps
+  const bodyGrad = ctx.createRadialGradient(b.x - b.r*.2, b.y - b.r*.2, 0, b.x, b.y, b.r);
+  bodyGrad.addColorStop(0, lighten(b.color, 40));
+  bodyGrad.addColorStop(1, b.color);
+  ctx.beginPath();
+  ctx.arc(b.x, b.y, b.r + b.pulse * 3, 0, Math.PI * 2);
+  ctx.fillStyle = bodyGrad;
+  ctx.fill();
+
+  ctx.restore();
+
+  // Reflet
+  ctx.beginPath();
+  ctx.arc(b.x - b.r*.28, b.y - b.r*.28, b.r*.22, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,.35)';
+  ctx.fill();
+
+  // Émoji balle 🏐 centré
+  ctx.font = `${Math.round(b.r * 1.1)}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🏐', b.x, b.y + 1);
+}
+
+function lighten(hex, amount) {
+  const num = parseInt(hex.replace('#',''), 16);
+  const r = Math.min(255, (num >> 16) + amount);
+  const g = Math.min(255, ((num >> 8) & 0xff) + amount);
+  const b2= Math.min(255, (num & 0xff) + amount);
+  return `rgb(${r},${g},${b2})`;
+}
+
+/* ═══════════════════════════════════════════════
+   END GAME
+   ═══════════════════════════════════════════════ */
+function endGame() {
+  running = false;
+  cancelAnimationFrame(rafId);
+  render();
+
+  const n = balls.length;
+  lastScore = n;
+
+  let title, text;
+  if (n <= 1) {
+    title = '😬 Aïe !';
+    text  = `${playerName} · 1 balle · La prochaine sera la bonne !`;
+  } else if (n <= 3) {
+    title = '🌸 Pas mal !';
+    text  = `${playerName} maintenait ${n} balles · Continue !`;
+  } else if (n <= 5) {
+    title = '⚡ Bien joué !';
+    text  = `${playerName} · ${n} balles en l'air · Impressionnant !`;
+  } else {
+    title = '🏆 Incroyable !';
+    text  = `${playerName} · ${n} balles simultanées · Record du weekend ?`;
+  }
+
+  document.getElementById('overlay-title').textContent = title;
+  document.getElementById('overlay-score').textContent = n + ' 🏐';
+  document.getElementById('overlay-text').textContent  = text;
+  document.getElementById('overlay').classList.add('show');
+  renderOverlayLeaderboard();
+
+  saveScore(playerName, n);
+}
+
+/* ═══════════════════════════════════════════════
+   INTERACTION — clic & touch
+   ═══════════════════════════════════════════════ */
+function hitTest(cx, cy) {
+  if (!running) return;
+  const rect   = canvas.getBoundingClientRect();
+  const scaleX = W / rect.width;
+  const scaleY = H / rect.height;
+  const mx = (cx - rect.left) * scaleX;
+  const my = (cy - rect.top)  * scaleY;
+  // Trie par proximité au clic, relance la plus proche
+  let closest = null, minDist = Infinity;
+  for (const b of balls) {
+    const d = Math.sqrt((mx-b.x)**2 + (my-b.y)**2);
+    if (d <= b.r + HIT_BONUS && d < minDist) { minDist = d; closest = b; }
+  }
+  if (closest) { closest.vy = -SPEED; closest.pulse = 1; }
+}
+
+canvas.addEventListener('click',      e => hitTest(e.clientX, e.clientY));
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  for (const t of e.changedTouches) hitTest(t.clientX, t.clientY);
+}, { passive: false });
+
+// Frappe la balle la plus proche du bas (utilisée par le bouton et la touche Espace)
+function tapNearest() {
+  if (!running) return;
+  let lowest = null;
+  for (const b of balls) {
+    if (!lowest || b.y > lowest.y) lowest = b;
+  }
+  if (lowest) { lowest.vy = -SPEED; lowest.pulse = 1; }
+}
+
+// Clavier : Espace = frappe la plus basse / Entrée aussi
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' || e.code === 'Enter') {
+    e.preventDefault();
+    tapNearest();
+  }
+});
+
+/* ═══════════════════════════════════════════════
+   LEADERBOARD — Supabase, tag = 'balls'
+   ═══════════════════════════════════════════════ */
+async function saveScore(name, pts) {
+  const entry = {
+    name,
+    won:       pts,
+    lost:      0,
+    side:      'balls',
+    tag:       'balls',
+    max_speed: 0,
+    winner:    'player',
+    score_str: String(pts),
+    game_date: new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}),
+    ts:        Date.now()
+  };
+
+  const local = getLocalScores();
+  local.push({...entry, scoreStr: entry.score_str, date: entry.game_date});
+  local.sort((a,b) => b.won - a.won || a.ts - b.ts);
+  localStorage.setItem('wedding_balls_scores', JSON.stringify(local));
+
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/scores`, {
+      method: 'POST', headers: SB_HEADERS, body: JSON.stringify(entry)
+    });
+    if (!r.ok) throw new Error(await r.text());
+    showToast('Score sauvegardé ! 🏆');
+    await loadLeaderboard();
+    renderOverlayLeaderboard();
+    renderLBPreview();
+  } catch(err) {
+    console.error('Supabase error:', err);
+    leaderboard = local;
+    renderOverlayLeaderboard();
+    renderLBPreview();
+    showToast('Score sauvegardé localement ✓');
+  }
+}
+
+function getLocalScores() {
+  try { return JSON.parse(localStorage.getItem('wedding_balls_scores')||'[]'); } catch { return []; }
+}
+
+async function loadLeaderboard() {
+  try {
+    const r = await fetch(
+      `${SB_URL}/rest/v1/scores?select=name,won,lost,side,tag,score_str,game_date,ts,max_speed,winner&tag=eq.balls&order=won.desc,ts.asc&limit=100`,
+      { headers: SB_HEADERS }
+    );
+    if (!r.ok) throw new Error(await r.text());
+    const data = await r.json();
+    leaderboard = data
+      .filter(e => e.name)
+      .map(e => ({...e, scoreStr: e.score_str || String(e.won), date: e.game_date}))
+      .sort((a,b) => b.won - a.won || a.ts - b.ts)
+      .slice(0, 50);
+  } catch(err) {
+    console.error('Supabase load error:', err);
+    leaderboard = getLocalScores();
+  }
+  renderLeaderboard();
+  renderLBPreview();
+}
+
+function renderLeaderboard() {
+  const el = document.getElementById('lb-full');
+  if (!leaderboard.length) {
+    el.innerHTML = '<div class="no-scores">Aucune partie encore.<br>Soyez le premier dans l\'histoire ! 🏆</div>';
+    return;
+  }
+  const rows = leaderboard.slice(0,20).map((e,i) => {
+    const rc    = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'';
+    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
+    return `<tr>
+      <td class="rank-cell ${rc}">${medal}</td>
+      <td class="winner-cell">${esc(e.name)}</td>
+      <td class="score-cell" style="font-family:'Playfair Display',serif;color:var(--gold);font-weight:700">${e.won} 🏐</td>
+      <td class="date-cell">${esc(e.date||'')}</td>
+    </tr>`;
+  }).join('');
+  el.innerHTML = `<table class="lb-table"><thead><tr><th>#</th><th>Joueur</th><th>Balles</th><th>Date</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function renderLBPreview() {
+  const el = document.getElementById('lb-preview');
+  if (!leaderboard.length) { el.innerHTML = '<div class="no-scores" style="padding:10px">Pas encore de scores !</div>'; return; }
+  el.innerHTML = leaderboard.slice(0,3).map((e,i) => {
+    const medal = i===0?'🥇':i===1?'🥈':'🥉';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+      <span style="font-size:12px">${medal} <strong>${esc(e.name)}</strong></span>
+      <span style="font-family:'Playfair Display',serif;font-size:13px;color:var(--gold);font-weight:700">${e.won} 🏐</span>
+    </div>`;
+  }).join('');
+}
+
+function renderOverlayLeaderboard() {
+  const el = document.getElementById('overlay-lb');
+  if (!leaderboard.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:12px">Aucun score encore.</div>';
+    return;
+  }
+  el.innerHTML = leaderboard.slice(0,10).map((e,i) => {
+    const medal   = i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}`;
+    const isCurrent = e.name === playerName && e.won === lastScore;
+    const style   = isCurrent ? 'background:rgba(201,168,76,.12);border-radius:6px;' : '';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 4px;border-bottom:1px solid rgba(255,255,255,.04);${style}">
+      <span style="font-size:12px;min-width:22px">${medal}</span>
+      <span style="flex:1;font-size:12px;font-weight:600;color:var(--cream)">${esc(e.name)}</span>
+      <span style="font-family:'Playfair Display',serif;color:var(--gold);font-size:13px;font-weight:700">${e.won} 🏐</span>
+    </div>`;
+  }).join('');
+}
+
+function showLeaderboard() { loadLeaderboard(); showScreen('leaderboard-screen'); }
+
+/* ═══════════════════════════════════════════════
+   PARTICLES
+   ═══════════════════════════════════════════════ */
+(function(){
+  const c = document.getElementById('particles');
+  const colors = ['#C9A84C','#F0D080','#E8C8C0','#FFFFFF','#D4B896'];
+  for (let i=0;i<16;i++){
+    const p = document.createElement('div'); p.className='petal';
+    p.style.cssText=`left:${Math.random()*100}vw;background:${colors[i%colors.length]};animation-duration:${7+Math.random()*9}s;animation-delay:${Math.random()*10}s;width:${4+Math.random()*5}px;height:${4+Math.random()*5}px`;
+    c.appendChild(p);
+  }
+})();
+
+/* ═══════════════════════════════════════════════
+   BOOT
+   ═══════════════════════════════════════════════ */
+loadLeaderboard();
+initGame();
+render();
+</script>
+</body>
+</html>

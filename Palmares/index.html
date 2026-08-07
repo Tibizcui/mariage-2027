@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Palmarès du Mariage · Les Champions</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400;1,600&family=Montserrat:wght@300;400;500;600&display=swap');
+
+:root {
+  --night:#0D0A07; --dark:#1A1512;
+  --gold:#C9A84C;  --gold-l:#F0D080; --gold-d:#8A6B20;
+  --blush:#E8C8C0; --cream:#FAF6EE;  --muted:#8A7E72;
+  --pong:#C9A84C;  --snake:#5A9E5A;  --balls:#9B59B6;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--night);font-family:'Montserrat',sans-serif;color:var(--cream);min-height:100vh;overflow-x:hidden;}
+
+#stars,#confetti{position:fixed;inset:0;z-index:0;pointer-events:none;}
+#confetti{z-index:2;}
+
+.ambient{position:fixed;z-index:0;pointer-events:none;border-radius:50%;filter:blur(120px);opacity:.18;}
+.ambient-1{width:600px;height:600px;background:var(--gold);top:-200px;left:-150px;}
+.ambient-2{width:500px;height:500px;background:var(--blush);bottom:-150px;right:-100px;}
+.ambient-3{width:400px;height:400px;background:var(--gold-d);top:40%;left:50%;transform:translateX(-50%);}
+
+.page{position:relative;z-index:10;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0 16px 80px;}
+
+/* ── Hero ── */
+.hero{text-align:center;padding:60px 20px 32px;position:relative;}
+.hero-eyebrow{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(14px,2.5vw,20px);color:var(--gold);letter-spacing:.12em;margin-bottom:16px;opacity:0;animation:fadeUp .8s .2s forwards;}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(36px,8vw,96px);font-weight:900;line-height:.95;letter-spacing:-.01em;color:transparent;background:linear-gradient(135deg,var(--gold-d) 0%,var(--gold) 40%,var(--gold-l) 60%,var(--gold) 80%,var(--gold-d) 100%);-webkit-background-clip:text;background-clip:text;background-size:200%;animation:shimmer 4s linear infinite,fadeUp .9s .4s both;}
+@keyframes shimmer{0%{background-position:100%}100%{background-position:-100%}}
+.hero-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(16px,3vw,24px);color:var(--blush);margin-top:14px;letter-spacing:.06em;opacity:0;animation:fadeUp .8s .6s forwards;}
+.hero-date{margin-top:10px;font-size:11px;letter-spacing:.25em;text-transform:uppercase;color:var(--muted);opacity:0;animation:fadeUp .8s .8s forwards;}
+.ornament{font-family:'Cormorant Garamond',serif;color:var(--gold);font-size:22px;margin:20px 0 0;letter-spacing:.3em;opacity:0;animation:fadeUp .8s 1s forwards;}
+
+.status-bar{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:40px;opacity:0;animation:fadeUp .8s 1.8s forwards;}
+.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#4ADE80;box-shadow:0 0 8px #4ADE80;animation:blink 1.5s ease-in-out infinite;vertical-align:middle;margin-right:6px;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* ── Podiums ── */
+.podiums-section{width:100%;max-width:1100px;margin:0 auto 60px;}
+.section-title{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(13px,2vw,16px);letter-spacing:.2em;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:32px;opacity:0;animation:fadeUp .8s 1.2s forwards;}
+.podiums-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;align-items:start;}
+
+/* ── Game card ── */
+.game-card{border-radius:20px;border:1px solid rgba(201,168,76,.15);background:rgba(255,255,255,.03);backdrop-filter:blur(12px);overflow:hidden;opacity:0;transform:translateY(60px);transition:box-shadow .4s;}
+.game-card.visible{animation:riseUp .9s cubic-bezier(.22,1,.36,1) forwards;}
+.game-card:hover{box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 40px rgba(201,168,76,.1);border-color:rgba(201,168,76,.35);}
+@keyframes riseUp{from{opacity:0;transform:translateY(70px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+.game-header{padding:22px 20px 14px;text-align:center;position:relative;overflow:hidden;}
+.game-header::before{content:'';position:absolute;inset:0;opacity:.07;}
+.pong-card  .game-header::before{background:linear-gradient(135deg,var(--pong),transparent);}
+.snake-card .game-header::before{background:linear-gradient(135deg,var(--snake),transparent);}
+.balls-card .game-header::before{background:linear-gradient(135deg,var(--balls),transparent);}
+.game-icon{font-size:36px;line-height:1;margin-bottom:8px;display:block;}
+.game-name{font-family:'Playfair Display',serif;font-size:clamp(16px,2.5vw,22px);font-weight:700;letter-spacing:.04em;}
+.pong-card  .game-name{color:var(--pong);}
+.snake-card .game-name{color:var(--snake);}
+.balls-card .game-name{color:var(--balls);}
+.game-tagline{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-top:4px;}
+
+/* ── Stats bar ── */
+.stats-bar{
+  display:grid; grid-template-columns:repeat(3,1fr);
+  border-top:1px solid rgba(255,255,255,.06);
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.stat-item{
+  padding:12px 8px; text-align:center;
+  border-right:1px solid rgba(255,255,255,.06);
+}
+.stat-item:last-child{border-right:none;}
+.stat-val{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(14px,2vw,18px);
+  font-weight:700; color:var(--gold-l);
+  line-height:1.1;
+}
+.stat-lbl{
+  font-size:9px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--muted);
+  margin-top:3px;
+}
+.stat-sub{
+  font-size:9px; color:rgba(201,168,76,.5);
+  margin-top:2px; font-style:italic;
+}
+
+/* ── Podium entries ── */
+.podium-list{padding:4px 0 16px;}
+.podium-entry{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.04);position:relative;transition:background .2s;}
+.podium-entry:last-child{border-bottom:none;}
+.podium-entry:hover{background:rgba(255,255,255,.03);}
+.podium-entry.rank-1{padding:16px 16px;background:rgba(201,168,76,.07);border-bottom:1px solid rgba(201,168,76,.1);}
+.podium-entry.rank-1::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--gold-l),var(--gold));border-radius:0 2px 2px 0;}
+.rank-badge{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;min-width:36px;text-align:center;line-height:1;flex-shrink:0;}
+.rank-1 .rank-badge{font-size:28px;}
+.entry-info{flex:1;min-width:0;}
+.entry-name{font-weight:600;font-size:13px;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rank-1 .entry-name{font-size:16px;font-family:'Playfair Display',serif;}
+.entry-detail{font-size:10px;color:var(--muted);margin-top:2px;letter-spacing:.06em;}
+.entry-score{font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:var(--gold);text-align:right;flex-shrink:0;}
+.rank-1 .entry-score{font-size:20px;color:var(--gold-l);}
+
+.skeleton{height:14px;border-radius:4px;background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.05) 75%);background-size:200%;animation:skeleton-shimmer 1.5s infinite;}
+@keyframes skeleton-shimmer{0%{background-position:200%}100%{background-position:-200%}}
+.no-scores{text-align:center;color:var(--muted);font-style:italic;font-size:12px;padding:24px 16px;}
+
+/* ── Podium rank-1 pulse ── */
+.rank-1{animation:glowPulse 3s ease-in-out infinite;}
+@keyframes glowPulse{0%,100%{background:rgba(201,168,76,.07)}50%{background:rgba(201,168,76,.13)}}
+
+/* ── Champions ── */
+.champions-section{width:100%;max-width:1100px;margin:0 auto 60px;opacity:0;animation:fadeUp 1s 2.4s forwards;}
+.champions-title{font-family:'Playfair Display',serif;font-size:clamp(22px,4vw,40px);font-weight:700;text-align:center;color:var(--gold);margin-bottom:6px;}
+.champions-sub{font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--muted);font-size:15px;text-align:center;margin-bottom:32px;letter-spacing:.06em;}
+.champions-row{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.champion-card{border-radius:16px;border:1px solid rgba(201,168,76,.2);background:rgba(201,168,76,.05);padding:28px 20px 24px;text-align:center;position:relative;overflow:hidden;transition:transform .3s,box-shadow .3s;}
+.champion-card:hover{transform:translateY(-4px);box-shadow:0 24px 60px rgba(0,0,0,.4),0 0 30px rgba(201,168,76,.12);}
+.champion-card::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(201,168,76,.06),transparent 60%);pointer-events:none;}
+.champion-trophy{font-size:48px;display:block;margin-bottom:12px;filter:drop-shadow(0 4px 12px rgba(201,168,76,.4));}
+.champion-game{font-size:9px;letter-spacing:.25em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.champion-name{font-family:'Playfair Display',serif;font-size:clamp(18px,3vw,28px);font-weight:700;color:var(--cream);margin-bottom:6px;line-height:1.1;}
+.champion-score{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:15px;color:var(--gold);}
+
+/* ── Refresh ── */
+.refresh-wrap{text-align:center;margin-bottom:40px;opacity:0;animation:fadeUp .8s 2.8s forwards;}
+.btn-refresh{padding:12px 32px;border:1px solid rgba(201,168,76,.35);border-radius:8px;background:transparent;color:var(--gold);font-family:'Montserrat',sans-serif;font-size:12px;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;transition:all .25s;}
+.btn-refresh:hover{background:rgba(201,168,76,.1);border-color:var(--gold);box-shadow:0 0 20px rgba(201,168,76,.15);}
+
+footer{text-align:center;padding:20px;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:14px;color:var(--muted);letter-spacing:.08em;opacity:0;animation:fadeUp .8s 3s forwards;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:700px){
+  .podiums-grid,.champions-row{grid-template-columns:1fr;}
+  .game-card{transform:none !important;}
+  .hero{padding:40px 12px 28px;}
+  .stats-bar{grid-template-columns:repeat(3,1fr);}
+}
+
+#petals{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden;}
+.petal{position:absolute;border-radius:50% 0;opacity:0;animation:fall linear infinite;}
+@keyframes fall{0%{transform:translateY(-20px) rotate(0deg);opacity:.6}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+
+.crown{display:inline-block;animation:crownFloat 2.5s ease-in-out infinite;}
+@keyframes crownFloat{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-6px) rotate(3deg)}}
+
+/* ── Cumul global ── */
+.global-section{
+  width:100%; max-width:1100px; margin:0 auto 56px;
+  opacity:0; animation:fadeUp 1s 2s forwards;
+}
+.global-band{
+  border:1px solid rgba(201,168,76,.2);
+  border-radius:20px;
+  background:rgba(255,255,255,.025);
+  backdrop-filter:blur(12px);
+  overflow:hidden;
+}
+.global-header{
+  text-align:center;
+  padding:22px 20px 14px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  position:relative;
+}
+.global-header::before{
+  content:'';
+  position:absolute; inset:0;
+  background:linear-gradient(135deg,rgba(201,168,76,.06),transparent 60%);
+  pointer-events:none;
+}
+.global-eyebrow{
+  font-size:9px; letter-spacing:.25em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:6px;
+}
+.global-title{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(18px,3vw,26px);
+  font-weight:700; color:var(--gold);
+  letter-spacing:.04em;
+}
+.global-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+}
+.global-stat{
+  padding:28px 24px;
+  text-align:center;
+  position:relative;
+}
+.global-stat:first-child{
+  border-right:1px solid rgba(255,255,255,.06);
+}
+.global-stat-icon{
+  font-size:28px; margin-bottom:10px; display:block;
+  filter:drop-shadow(0 2px 8px rgba(201,168,76,.3));
+}
+.global-stat-val{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(28px,5vw,48px);
+  font-weight:900;
+  color:transparent;
+  background:linear-gradient(135deg,var(--gold-d),var(--gold),var(--gold-l));
+  -webkit-background-clip:text; background-clip:text;
+  line-height:1; margin-bottom:8px;
+}
+.global-stat-lbl{
+  font-size:10px; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--muted);
+}
+.global-stat-sub{
+  font-family:'Cormorant Garamond',serif;
+  font-style:italic;
+  font-size:13px; color:rgba(201,168,76,.55);
+  margin-top:5px;
+}
+@media(max-width:500px){
+  .global-grid{grid-template-columns:1fr;}
+  .global-stat:first-child{border-right:none;border-bottom:1px solid rgba(255,255,255,.06);}
+}
+</style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+<canvas id="confetti"></canvas>
+<div class="ambient ambient-1"></div>
+<div class="ambient ambient-2"></div>
+<div class="ambient ambient-3"></div>
+<div id="petals"></div>
+
+<div class="page">
+
+  <div class="hero">
+    <div class="hero-eyebrow">❧ Palmarès officiel ❧</div>
+    <h1>Les Champions</h1>
+    <div class="hero-sub">du Weekend des Mariés</div>
+    <div class="hero-date" id="hero-date"></div>
+    <div class="ornament">✦ &nbsp; ✦ &nbsp; ✦</div>
+  </div>
+
+  <div class="status-bar">
+    <span class="live-dot"></span>
+    Classements en temps réel · Mise à jour automatique toutes les 30 s
+  </div>
+
+  <!-- ── PODIUMS ── -->
+  <div class="podiums-section">
+    <div class="section-title">Meilleurs scores par jeu</div>
+    <div class="podiums-grid">
+
+      <!-- PONG -->
+      <div class="game-card pong-card" id="card-pong">
+        <div class="game-header">
+          <span class="game-icon">🏓</span>
+          <div class="game-name">Pong</div>
+          <div class="game-tagline">Duel · Raquettes · Vitesse</div>
+        </div>
+        <div class="stats-bar" id="stats-pong">
+          <div class="stat-item"><div class="stat-val skeleton" style="width:40px;margin:auto">　</div><div class="stat-lbl">Parties</div></div>
+          <div class="stat-item"><div class="stat-val skeleton" style="width:60px;margin:auto">　</div><div class="stat-lbl">Temps</div></div>
+          <div class="stat-item"><div class="stat-val skeleton" style="width:40px;margin:auto">　</div><div class="stat-lbl">Points</div></div>
+        </div>
+        <div class="podium-list" id="list-pong">
+          <div style="padding:20px 16px"><div class="skeleton" style="width:70%;margin-bottom:8px"></div><div class="skeleton" style="width:50%"></div></div>
+        </div>
+      </div>
+
+      <!-- SNAKE -->
+      <div class="game-card snake-card" id="card-snake">
+        <div class="game-header">
+          <span class="game-icon">🐍</span>
+          <div class="game-name">Snake</div>
+          <div class="game-tagline">Nokia 3310 · ❤️ · Survie</div>
+        </div>
+        <div class="stats-bar" id="stats-snake">
+          <div class="stat-item"><div class="stat-val skeleton" style="width:40px;margin:auto">　</div><div class="stat-lbl">Parties</div></div>
+          <div class="stat-item"><div class="stat-val skeleton" style="width:60px;margin:auto">　</div><div class="stat-lbl">Temps</div></div>
+          <div class="stat-item"><div class="stat-val skeleton" style="width:40px;margin:auto">　</div><div class="stat-lbl">❤️ mangés</div></div>
+        </div>
+        <div class="podium-list" id="list-snake">
+          <div style="padding:20px 16px"><div class="skeleton" style="width:70%;margin-bottom:8px"></div><div class="skeleton" style="width:50%"></div></div>
+        </div>
+      </div>
+
+      <!-- SPIKEBALL -->
+      <div class="game-card balls-card" id="card-balls">
+        <div class="game-header">
+          <span class="game-icon">🏐</span>
+          <div class="game-name">Spikeball</div>
+          <div class="game-tagline">Balles · Réflexes · Chaos</div>
+        </div>
+        <div class="stats-bar" id="stats-balls">
+          <div class="stat-item"><div class="stat-val skeleton" style="width:40px;margin:auto">　</div><div class="stat-lbl">Parties</div></div>
+          <div class="stat-item"><div class="stat-val skeleton" style="width:60px;margin:auto">　</div><div class="stat-lbl">Temps</div></div>
+          <div class="stat-item"><div class="stat-val skeleton" style="width:40px;margin:auto">　</div><div class="stat-lbl">🏐 Balles</div></div>
+        </div>
+        <div class="podium-list" id="list-balls">
+          <div style="padding:20px 16px"><div class="skeleton" style="width:70%;margin-bottom:8px"></div><div class="skeleton" style="width:50%"></div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── CUMUL GLOBAL ── -->
+  <div class="global-section">
+    <div class="global-band">
+      <div class="global-header">
+        <div class="global-eyebrow">🏓 Pong · 🐍 Snake · 🏐 Spikeball</div>
+        <div class="global-title">Tous les jeux confondus</div>
+      </div>
+      <div class="global-grid">
+        <div class="global-stat">
+          <span class="global-stat-icon">🎮</span>
+          <div class="global-stat-val" id="global-parties">—</div>
+          <div class="global-stat-lbl">Parties jouées</div>
+          <div class="global-stat-sub" id="global-parties-sub"></div>
+        </div>
+        <div class="global-stat">
+          <span class="global-stat-icon">⏱️</span>
+          <div class="global-stat-val" id="global-temps">—</div>
+          <div class="global-stat-lbl">Temps de jeu</div>
+          <div class="global-stat-sub">estimé · tous jeux</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HALL OF FAME ── -->
+  <div class="champions-section">
+    <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:8px;">
+      <span style="flex:1;height:1px;background:linear-gradient(to right,transparent,rgba(201,168,76,.3))"></span>
+      <span class="crown">👑</span>
+      <span style="flex:1;height:1px;background:linear-gradient(to left,transparent,rgba(201,168,76,.3))"></span>
+    </div>
+    <div class="champions-title">Hall of Fame</div>
+    <div class="champions-sub">Les meilleurs de chaque arène</div>
+    <div class="champions-row">
+      <div class="champion-card">
+        <span class="champion-trophy">🏆</span>
+        <div class="champion-game">🏓 Champion Pong</div>
+        <div class="champion-name" id="champ-pong-name">—</div>
+        <div class="champion-score" id="champ-pong-score"></div>
+      </div>
+      <div class="champion-card">
+        <span class="champion-trophy">🏆</span>
+        <div class="champion-game">🐍 Champion Snake</div>
+        <div class="champion-name" id="champ-snake-name">—</div>
+        <div class="champion-score" id="champ-snake-score"></div>
+      </div>
+      <div class="champion-card">
+        <span class="champion-trophy">🏆</span>
+        <div class="champion-game">🏐 Champion Spikeball</div>
+        <div class="champion-name" id="champ-balls-name">—</div>
+        <div class="champion-score" id="champ-balls-score"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="refresh-wrap">
+    <button class="btn-refresh" id="refreshBtn" onclick="loadAll()">⟳ &nbsp; Actualiser les scores</button>
+  </div>
+
+  <footer>Créé avec ❤️ pour le mariage · Que le meilleur gagne !</footer>
+
+</div>
+
+<script>
+/* ══════════════════════════════════════
+   SUPABASE
+══════════════════════════════════════ */
+const SB_URL = "https://tsuhpiuqgyupnqskugox.supabase.co";
+const SB_KEY = "sb_publishable_LpmIQCFTvhYFWl3hSlFi6g_m7j2qHhd";
+const SB_H   = { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY };
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+document.getElementById('hero-date').textContent =
+  new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+/* ══════════════════════════════════════
+   DURÉE — formatage j h m s
+══════════════════════════════════════ */
+function fmtDuration(totalSeconds) {
+  const s  = Math.round(totalSeconds);
+  const d  = Math.floor(s / 86400);
+  const h  = Math.floor((s % 86400) / 3600);
+  const m  = Math.floor((s % 3600)  / 60);
+  const sc = s % 60;
+  if (d > 0)  return `${d}j ${h}h ${m}m`;
+  if (h > 0)  return `${h}h ${m}m`;
+  if (m > 0)  return `${m}m ${sc}s`;
+  return `${sc}s`;
+}
+
+/* ══════════════════════════════════════
+   STATS BAR RENDERER
+   Durée estimée par jeu :
+   - Pong     : 3 min/partie (durée moyenne d'une manche)
+   - Snake    : 30s + 15s par ❤️ mangé  (plus on mange, plus ça dure)
+   - Spikeball: 3s par balle (3 s / balle moyenne en jeu)
+══════════════════════════════════════ */
+function renderStats(game, count, totalPts, estimatedSeconds, pointLabel) {
+  const el = document.getElementById(`stats-${game}`);
+  el.innerHTML = `
+    <div class="stat-item">
+      <div class="stat-val">${count}</div>
+      <div class="stat-lbl">Parties</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">${fmtDuration(estimatedSeconds)}</div>
+      <div class="stat-lbl">Temps joué</div>
+      <div class="stat-sub">estimé</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">${totalPts.toLocaleString('fr-FR')}</div>
+      <div class="stat-lbl">${pointLabel}</div>
+    </div>`;
+}
+
+/* ══════════════════════════════════════
+   PONG — charge TOUT pour les stats
+   (filtre easy/medium/hard/insane)
+══════════════════════════════════════ */
+async function fetchPong() {
+  // Top 5 pour le podium
+  const rTop = await fetch(
+    `${SB_URL}/rest/v1/scores?select=name,won,lost,tag,score_str,game_date,winner&tag=in.(easy,medium,hard,insane)&order=won.desc&limit=200`,
+    { headers: SB_H }
+  );
+  if (!rTop.ok) throw new Error();
+  const all = (await rTop.json()).filter(e => e.name);
+
+  const diffW = { insane:4, hard:3, medium:2, easy:1 };
+  const sorted = all
+    .map(e => ({ ...e, score_str: e.score_str || `${e.won}–${e.lost}` }))
+    .sort((a,b) => {
+      const dd = (diffW[b.tag]||0) - (diffW[a.tag]||0);
+      if (dd) return dd;
+      const ww = (b.winner==='player'?1:0) - (a.winner==='player'?1:0);
+      if (ww) return ww;
+      return b.won !== a.won ? b.won - a.won : a.lost - b.lost;
+    });
+
+  // Stats globales
+  const count     = all.length;
+  const totalPts  = all.reduce((s,e) => s + (e.won||0) + (e.lost||0), 0);
+  const estSec    = count * 3 * 60; // ~3 min/partie
+
+  return { top5: sorted.slice(0,5), count, totalPts, estSec };
+}
+
+function renderPong({ top5, count, totalPts, estSec }) {
+  renderStats('pong', count, totalPts, estSec, 'Points marqués');
+  const el = document.getElementById('list-pong');
+  if (!top5.length) { el.innerHTML='<div class="no-scores">Aucune partie encore</div>'; return; }
+  const diffLabel = { easy:'Facile', medium:'Normal', hard:'Difficile', insane:'⚡ Insane' };
+  el.innerHTML = top5.map((e,i) => {
+    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}`;
+    return `<div class="podium-entry rank-${i+1}">
+      <div class="rank-badge">${medal}</div>
+      <div class="entry-info">
+        <div class="entry-name">${esc(e.name)}</div>
+        <div class="entry-detail">${diffLabel[e.tag]||e.tag} · ${e.winner==='player'?'Victoire':'Défaite'}</div>
+      </div>
+      <div class="entry-score">${esc(e.score_str)}</div>
+    </div>`;
+  }).join('');
+  setChampion('pong', top5[0]?.name, top5[0]?.score_str);
+}
+
+/* ══════════════════════════════════════
+   SNAKE
+══════════════════════════════════════ */
+async function fetchSnake() {
+  const r = await fetch(
+    `${SB_URL}/rest/v1/scores?select=name,won,game_date&tag=eq.snake&order=won.desc,ts.asc&limit=500`,
+    { headers: SB_H }
+  );
+  if (!r.ok) throw new Error();
+  const all = (await r.json()).filter(e => e.name);
+
+  const count    = all.length;
+  const totalPts = all.reduce((s,e) => s + (e.won||0), 0);
+  // 30s de base + 15s par ❤️ mangé (moyenne pondérée)
+  const estSec   = all.reduce((s,e) => s + 30 + (e.won||0) * 15, 0);
+
+  return { top5: all.slice(0,5), count, totalPts, estSec };
+}
+
+function renderSnake({ top5, count, totalPts, estSec }) {
+  renderStats('snake', count, totalPts, estSec, '❤️ mangés');
+  const el = document.getElementById('list-snake');
+  if (!top5.length) { el.innerHTML='<div class="no-scores">Aucune partie encore</div>'; return; }
+  el.innerHTML = top5.map((e,i) => {
+    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}`;
+    return `<div class="podium-entry rank-${i+1}">
+      <div class="rank-badge">${medal}</div>
+      <div class="entry-info">
+        <div class="entry-name">${esc(e.name)}</div>
+        <div class="entry-detail">${esc(e.game_date||'')}</div>
+      </div>
+      <div class="entry-score">${e.won} ❤️</div>
+    </div>`;
+  }).join('');
+  setChampion('snake', top5[0]?.name, `${top5[0]?.won} ❤️ mangés`);
+}
+
+/* ══════════════════════════════════════
+   SPIKEBALL
+══════════════════════════════════════ */
+async function fetchBalls() {
+  const r = await fetch(
+    `${SB_URL}/rest/v1/scores?select=name,won,game_date&tag=eq.balls&order=won.desc,ts.asc&limit=500`,
+    { headers: SB_H }
+  );
+  if (!r.ok) throw new Error();
+  const all = (await r.json()).filter(e => e.name);
+
+  const count    = all.length;
+  const totalPts = all.reduce((s,e) => s + (e.won||0), 0);
+  // 3s de base + 3s par balle en jeu (les balles restent en l'air)
+  const estSec   = all.reduce((s,e) => s + 10 + (e.won||0) * 3 * 3, 0);
+
+  return { top5: all.slice(0,5), count, totalPts, estSec };
+}
+
+function renderBalls({ top5, count, totalPts, estSec }) {
+  renderStats('balls', count, totalPts, estSec, '🏐 Balles');
+  const el = document.getElementById('list-balls');
+  if (!top5.length) { el.innerHTML='<div class="no-scores">Aucune partie encore</div>'; return; }
+  el.innerHTML = top5.map((e,i) => {
+    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}`;
+    return `<div class="podium-entry rank-${i+1}">
+      <div class="rank-badge">${medal}</div>
+      <div class="entry-info">
+        <div class="entry-name">${esc(e.name)}</div>
+        <div class="entry-detail">${esc(e.game_date||'')}</div>
+      </div>
+      <div class="entry-score">${e.won} 🏐</div>
+    </div>`;
+  }).join('');
+  setChampion('balls', top5[0]?.name, `${top5[0]?.won} balles simultanées`);
+}
+
+/* ══════════════════════════════════════
+   HALL OF FAME
+══════════════════════════════════════ */
+function setChampion(game, name, score) {
+  if (!name) return;
+  document.getElementById(`champ-${game}-name`).textContent  = name;
+  document.getElementById(`champ-${game}-score`).textContent = score;
+  burstConfetti();
+}
+
+/* ══════════════════════════════════════
+   LOAD ALL
+══════════════════════════════════════ */
+let confettiDone = false;
+
+async function loadAll() {
+  const btn = document.getElementById('refreshBtn');
+  btn.textContent = '⟳ Chargement…'; btn.style.opacity='.6';
+
+  ['card-pong','card-snake','card-balls'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    el.style.animationDelay = `${1.4 + i * 0.15}s`;
+    el.classList.add('visible');
+  });
+
+  try {
+    const [pong, snake, balls] = await Promise.all([fetchPong(), fetchSnake(), fetchBalls()]);
+    renderPong(pong);
+    renderSnake(snake);
+    renderBalls(balls);
+
+    // ── Cumul global ──
+    const totalParties = pong.count + snake.count + balls.count;
+    const totalSec     = pong.estSec + snake.estSec + balls.estSec;
+
+    document.getElementById('global-parties').textContent = totalParties.toLocaleString('fr-FR');
+    document.getElementById('global-parties-sub').textContent =
+      `${pong.count} Pong · ${snake.count} Snake · ${balls.count} Spikeball`;
+    document.getElementById('global-temps').textContent = fmtDuration(totalSec);
+  } catch(e) { console.error(e); }
+
+  btn.textContent = '⟳  Actualiser les scores'; btn.style.opacity='1';
+}
+
+/* ══════════════════════════════════════
+   STARFIELD
+══════════════════════════════════════ */
+(function(){
+  const c=document.getElementById('stars'), ctx=c.getContext('2d');
+  c.width=window.innerWidth; c.height=window.innerHeight;
+  const stars=Array.from({length:160},()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.2+.2,a:Math.random(),da:(Math.random()-.5)*.003}));
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    stars.forEach(s=>{s.a=Math.max(.05,Math.min(1,s.a+s.da));if(s.a<=.06||s.a>=.99)s.da*=-1;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,245,220,${s.a})`;ctx.fill();});
+    requestAnimationFrame(draw);
+  }
+  draw();
+  window.addEventListener('resize',()=>{c.width=window.innerWidth;c.height=window.innerHeight;});
+})();
+
+/* ══════════════════════════════════════
+   CONFETTI
+══════════════════════════════════════ */
+const cfc=document.getElementById('confetti'),cfx=cfc.getContext('2d');
+cfc.width=window.innerWidth; cfc.height=window.innerHeight;
+window.addEventListener('resize',()=>{cfc.width=window.innerWidth;cfc.height=window.innerHeight;});
+let particles=[];
+const CF_COLORS=['#C9A84C','#F0D080','#E8C8C0','#FAF6EE','#D4B896','#8B5CF6','#5A9E5A'];
+function burstConfetti(){
+  if(confettiDone)return; confettiDone=true;
+  for(let i=0;i<140;i++) particles.push({x:Math.random()*cfc.width,y:-10-Math.random()*200,vx:(Math.random()-.5)*4,vy:2+Math.random()*4,r:3+Math.random()*5,color:CF_COLORS[Math.floor(Math.random()*CF_COLORS.length)],rot:Math.random()*Math.PI*2,drot:(Math.random()-.5)*.12,life:1,dl:.006+Math.random()*.004});
+  cfLoop();
+}
+function cfLoop(){
+  cfx.clearRect(0,0,cfc.width,cfc.height);
+  particles=particles.filter(p=>p.life>0);
+  particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.rot+=p.drot;p.life-=p.dl;cfx.save();cfx.translate(p.x,p.y);cfx.rotate(p.rot);cfx.globalAlpha=Math.max(0,p.life);cfx.fillStyle=p.color;cfx.fillRect(-p.r,-p.r*.5,p.r*2,p.r);cfx.restore();});
+  if(particles.length) requestAnimationFrame(cfLoop);
+}
+
+/* ══════════════════════════════════════
+   PÉTALES
+══════════════════════════════════════ */
+(function(){
+  const colors=['#C9A84C','#F0D080','#E8C8C0','#FFFFFF','#D4B896'];
+  for(let i=0;i<14;i++){const p=document.createElement('div');p.className='petal';p.style.cssText=`left:${Math.random()*100}vw;background:${colors[i%colors.length]};animation-duration:${8+Math.random()*10}s;animation-delay:${Math.random()*12}s;width:${4+Math.random()*5}px;height:${4+Math.random()*5}px`;document.getElementById('petals').appendChild(p);}
+})();
+
+/* ══════════════════════════════════════
+   BOOT
+══════════════════════════════════════ */
+loadAll();
+setInterval(loadAll, 30000);
+</script>
+</body>
+</html>

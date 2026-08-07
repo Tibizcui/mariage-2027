@@ -1,0 +1,15 @@
+name: Ping Supabase
+on:
+  schedule:
+    - cron: '0 8 * * *'  # tous les jours à 8h
+  workflow_dispatch:      # permet le déclenchement manuel
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        run: |
+          curl -s "https://tsuhpiuqgyupnqskugox.supabase.co/rest/v1/scores?limit=1" \
+          -H "apikey: sb_publishable_LpmIQCFTvhYFWl3hSlFi6g_m7j2qHhd" \
+          -H "Authorization: Bearer sb_publishable_LpmIQCFTvhYFWl3hSlFi6g_m7j2qHhd"
