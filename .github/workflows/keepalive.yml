@@ -1,0 +1,24 @@
+name: Keepalive
+
+on:
+  schedule:
+    - cron: '0 6 1,15 * *'   # le 1er et le 15 de chaque mois a 6h UTC
+  workflow_dispatch:          # declenchement manuel possible
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout avec le PAT
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.KEEPALIVE_PAT }}
+
+      - name: Commit d'entretien
+        run: |
+          git config user.name "keepalive-bot"
+          git config user.email "keepalive-bot@users.noreply.github.com"
+          date -u +"Dernier keepalive : %Y-%m-%d %H:%M UTC" > .keepalive
+          git add .keepalive
+          git commit -m "keepalive $(date -u +%Y-%m-%d)" || echo "Rien a committer"
+          git push
